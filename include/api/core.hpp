@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstdio>
 #include <memory>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -97,6 +98,44 @@ namespace api {
         NODISCARD bool active() CNOEXCEPT { return _data; }
 
     private:
+        T* _data = nullptr;
+    };
+
+    template <typename T>
+    struct CircularQueue {
+        explicit CircularQueue(std::size_t size) : _size(size) {
+            _data = new T[size] {};
+        }
+
+        CircularQueue(const CircularQueue&) = delete;
+        CircularQueue(CircularQueue&&) = delete;
+
+        ~CircularQueue() {
+            delete[] _data;
+        }
+
+        void apply(auto&& functor) NOEXCEPT {
+            auto data_span = data();
+            for(auto& t : data_span)
+                functor(t);
+        }
+
+        T& next() NOEXCEPT {
+            if(_location == _size)
+                _location = 0;
+
+            T& t = _data[_location];
+            ++_location;
+            return t;
+        }
+
+        NODISCARD std::span<T> data() CNOEXCEPT {
+            return { _data, _size };
+        }
+
+    private:
+        std::size_t _size;
+        std::size_t _location = 0;
         T* _data = nullptr;
     };
 

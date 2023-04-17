@@ -9,7 +9,7 @@ windres resources/resources.rc %resource_path%
 
 :: Windows api interface
 set api_src=include/api/console.cpp include/api/core.cpp include/api/input.cpp include/api/keypress_handler.cpp include/api/timer.cpp
-set audio_src=include/audio/core.cpp include/audio/audiochannel.cpp include/audio/audiointerface.cpp
+set audio_src=include/audio/core.cpp include/audio/audiochannel.cpp include/audio/audiointerface.cpp include/audio/source_types/audiosource_single.cpp include/audio/source_types/audiosource_circular.cpp include/audio/source_types/audiosource_looping.cpp include/audio/source_types/iaudiosource.cpp
 set ui_src=include/ui/strided_memcpy.cpp
 
 set compile_opts= -std=c++20 -O4 -DCOMPILER_DEBUG=0 -Iinclude

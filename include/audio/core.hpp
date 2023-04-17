@@ -18,6 +18,8 @@
 
 #undef interface
 
+#define AUDIO_CIRCULAR_QUEUE_MAX 20
+
 namespace audio {
     struct WavFormatDeleter {
         void operator()(ADPCMWAVEFORMAT* ptr) CNOEXCEPT { free(ptr); }

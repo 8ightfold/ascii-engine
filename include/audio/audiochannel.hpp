@@ -2,6 +2,7 @@
 #define PROJECT3_TEST_AUDIOCHANNEL_HPP
 
 #include <audio/core.hpp>
+#include <audio/audiosource.hpp>
 
 namespace audio {
     struct XAudioChannel {
@@ -14,14 +15,15 @@ namespace audio {
 
     private:
         void bind(IXAudio2* interface, const std::string& name) NOEXCEPT;
+        void set_type(SourceType type) NOEXCEPT;
+        NODISCARD SourceType get_type() CNOEXCEPT;
         void play() NOEXCEPT;
+        void clear() NOEXCEPT;
         void pause() NOEXCEPT;
 
     private:
-        IXAudio2SourceVoice* _play_source = nullptr;
-        AudioResource* _resource = nullptr;
-        XAUDIO2_BUFFER _buffer = {};
-
+        IAudioSource* _play_source = nullptr;
+        SourceType _type = SourceType::eSingleInstance;
         friend struct XAudioInterface;
     };
 }

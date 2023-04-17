@@ -253,6 +253,8 @@
 #  define register
 #endif
 
+#define PURE = 0
+
 #define COMPILER_FILE __FILE__
 #define COMPILER_LINE __LINE__
 

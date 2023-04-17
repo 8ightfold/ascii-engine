@@ -10,7 +10,9 @@ add_library(project3 STATIC
 
         include/ui/strided_memcpy.cpp
 
-        include/audio/core.cpp include/audio/audiochannel.cpp include/audio/audiointerface.cpp)
+        include/audio/core.cpp include/audio/audiochannel.cpp include/audio/audiointerface.cpp
+        include/audio/source_types/audiosource_single.cpp include/audio/source_types/audiosource_circular.cpp
+        include/audio/source_types/audiosource_looping.cpp include/audio/source_types/iaudiosource.cpp)
 
 target_include_directories(project3 PUBLIC include)
 target_compile_definitions(project3 PUBLIC -DCOMPILER_DEBUG=1)

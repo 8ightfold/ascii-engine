@@ -2,56 +2,69 @@
 
 namespace audio {
     void XAudioChannel::release() NOEXCEPT {
-        if(_play_source) {
-            _play_source->Stop(0);
-            _play_source->DestroyVoice();
-            _play_source = nullptr;
-        }
+        delete _play_source;
+        _play_source = nullptr;
     }
 
     XAudioChannel::~XAudioChannel() {
         release();
-        delete _resource;
     }
 
     XAudioChannel::operator bool() CNOEXCEPT {
-        return (_play_source && _resource);
+        return _play_source;
     }
 
     std::string XAudioChannel::filename() CNOEXCEPT {
-        if(_resource) return _resource->get_filename();
+        if(_play_source) return _play_source->name();
         else return "null";
     }
 
-    void XAudioChannel::bind(IXAudio2* interface, const std::string& name) NOEXCEPT {
-        _resource = new AudioResource(name, "wav");
-        auto* wfx = &_resource->get_fmt()->wfx;
-
-        if(FAILED( interface->CreateSourceVoice(&_play_source, wfx, 0,
-                                                XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, nullptr, nullptr) )) {
-            std::cerr << "Could not create source voice '" << name << "'" << std::endl;
-            std::exit(-1);
+    // Private
+    static IAudioSource* create_instance(SourceType type) NOEXCEPT {
+        switch(type) {
+            case SourceType::eSingleInstance: {
+                return new AudioSourceSingle();
+            }
+            case SourceType::eLoopingInstance: {
+                return new AudioSourceLooping();
+            }
+            case SourceType::eCircularInstance: {
+                return new AudioSourceCircular();
+            }
+            default: return nullptr;
         }
+    }
 
-        const auto& data_buf = _resource->get_data();
-        _buffer.AudioBytes = data_buf.size();
-        _buffer.pAudioData = data_buf.data();
-        _buffer.Flags = XAUDIO2_END_OF_STREAM;
+    void XAudioChannel::bind(IXAudio2* interface, const std::string& name) NOEXCEPT {
+        if(not _play_source) {
+            _play_source = create_instance(_type);
+            _play_source->bind(interface, name);
+        }
+    }
+
+    void XAudioChannel::set_type(SourceType type) NOEXCEPT {
+        if(not _play_source) _type = type;
+    }
+
+    SourceType XAudioChannel::get_type() CNOEXCEPT {
+        return _type;
     }
 
     void XAudioChannel::play() NOEXCEPT {
         if(_play_source) LIKELY {
-            if(FAILED( _play_source->SubmitSourceBuffer(&_buffer) )) UNLIKELY {
-                std::cerr << "Could not create source buffer for '" << _resource->get_filename() << "'" << std::endl;
-                std::exit(-1);
-            }
-            _play_source->Start(0);
+            _play_source->play();
+        }
+    }
+
+    void XAudioChannel::clear() NOEXCEPT {
+        if(_play_source) LIKELY {
+            _play_source->clear();
         }
     }
 
     void XAudioChannel::pause() NOEXCEPT {
         if(_play_source) LIKELY {
-            _play_source->Stop(0);
+            _play_source->pause();
         }
     }
 }

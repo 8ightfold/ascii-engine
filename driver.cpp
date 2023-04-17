@@ -34,9 +34,9 @@ int main(int argc, char* argv[]) {
     api::Timer timer, seconds;
     constexpr double framerate_ms = 1000.0 / 120.0;
 
-    audio_interface.register_source("wind");
-    audio_interface.register_source("walk");
-    audio_interface.register_source("boing");
+    audio_interface.register_source("wind", audio::eLoopingInstance);
+    audio_interface.register_source("walking");
+    audio_interface.register_source("boing", audio::eCircularInstance);
 
     const api::KeypressHandler ESCAPE = khf(VK_ESCAPE, api::eSingle);
     const api::KeypressHandler RESET = khf('R', api::eSingle);
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
     framebuffer.swap_buffers();
 
     audio_interface.start_source("wind");
-    audio_interface.start_source("walk");
+    audio_interface.start_source("walking");
 
     auto screen_coords = (api::dVec2)(window.get_screen_coords() + 1) / (api::dVec2)framebuffer.get_coords();
 
@@ -81,9 +81,8 @@ int main(int argc, char* argv[]) {
         std::this_thread::sleep_for(dur);
 
         if(RESET()) {
-            audio_interface.stop_source("wind");
-            audio_interface.stop_source("walk");
-            audio_interface.restart_source("boing");
+            audio_interface.stop_source("walking");
+            audio_interface.start_source("boing");
             I = 0;
             frames = 0;
             seconds.restart();

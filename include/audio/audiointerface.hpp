@@ -23,7 +23,7 @@ namespace audio {
         ~XAudioInterface();
         static XAudioInterface create_interface() NOEXCEPT;
 
-        XAudioChannel& register_source(const std::string& name) NOEXCEPT;
+        XAudioChannel& register_source(const std::string& name, SourceType type = SourceType::eSingleInstance) NOEXCEPT;
         void start_source(const std::string& name) NOEXCEPT;
         void restart_source(const std::string& name) NOEXCEPT;
         void stop_source(const std::string& name) NOEXCEPT;

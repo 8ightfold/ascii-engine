@@ -1,3 +1,3 @@
-wind wav "wind.wav"
-walk wav "walking.wav"
-boing wav "boing.wav"
+wind wav "audio/wind.wav"
+walking wav "audio/walking.wav"
+boing wav "audio/boing.wav"

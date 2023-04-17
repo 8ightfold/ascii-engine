@@ -23,10 +23,13 @@ namespace audio {
         return interface;
     }
 
-    XAudioChannel& XAudioInterface::register_source(const std::string& name) NOEXCEPT {
+    XAudioChannel& XAudioInterface::register_source(const std::string& name, SourceType type) NOEXCEPT {
         if(not _pipeline_sources.contains(name)) {
             auto& source = _pipeline_sources[name];
-            if(not source) source.bind(_audio_interface, name);
+            if(not source) {
+                source.set_type(type);
+                source.bind(_audio_interface, name);
+            }
             return source;
         }
 
@@ -34,21 +37,23 @@ namespace audio {
     }
 
     void XAudioInterface::start_source(const std::string& name) NOEXCEPT {
-        auto& source = register_source(name);
-        source.play();
+        if(_pipeline_sources.contains(name)) {
+            _pipeline_sources[name].play();
+        }
     }
 
     void XAudioInterface::restart_source(const std::string& name) NOEXCEPT {
-        auto& source = register_source(name);
-        source.pause();
-        source._play_source->FlushSourceBuffers();
-        source.play();
+        if(_pipeline_sources.contains(name)) {
+            _pipeline_sources[name].pause();
+            _pipeline_sources[name].clear();
+            _pipeline_sources[name].play();
+        }
     }
 
     void XAudioInterface::stop_source(const std::string& name) NOEXCEPT {
         if(_pipeline_sources.contains(name)) {
             auto& source = _pipeline_sources[name];
-            source._play_source->Stop(0);
+            _pipeline_sources[name].pause();
         }
     }
 
