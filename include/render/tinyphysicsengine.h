@@ -4,7 +4,7 @@
 /**
   tinyphysicsengine (TPE)
 
-  Simple/suckless header-only hybrid 3D physics engine with no floating point,
+  Simple/suckless header-only hybrid 3D physics render with no floating point,
   only 32 bit int arithmetic, similar to e.g. small3dlib.
   
   Conventions and formats are the same or similar to those of small3dlib so as
@@ -50,8 +50,7 @@
   exclusive, irrevocable and unconditional license to this right. 
 */
 
-#include <stdint.h>
-#include <stdio.h>
+#include <cstdint>
 
 typedef int32_t TPE_Unit;               ///< Basic fixed point unit type.
 typedef int16_t TPE_UnitReduced;        ///< Like TPE_Unit but saving space

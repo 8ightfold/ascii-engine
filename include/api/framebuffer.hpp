@@ -90,7 +90,7 @@ namespace api {
 
 
     template <typename T>
-    using WrappedBuffer = std::reference_wrapper<Buffer<T>>;
+    using WrappedBuffer = ObjectBinding<Buffer<T>>;
 
 
     template <typename T>
@@ -163,7 +163,7 @@ namespace api {
         }
 
         T* get_raw_buffer_data() NOEXCEPT {
-            return get_active_buffer().get().raw_data();
+            return get_active_buffer()->raw_data();
         }
 
         State post_buffer() NOEXCEPT {

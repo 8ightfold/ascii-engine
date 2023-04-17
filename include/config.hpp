@@ -177,6 +177,13 @@
 #  define RESTRICT
 #endif
 
+#ifdef COMPILER_MSVC
+#  define COMPILER_UUID_I(value) uuid(STRINGIFY(value))
+#  define COMPILER_UUID(value) __declspec(COMPILER_UUID_I(value))
+#else
+#  define COMPILER_UUID(...)
+#endif
+
 #if CPPVER(23)
 #  define ASSUME(...) [[assume(__VA_ARGS__)]]
 #else
@@ -242,6 +249,10 @@
 #  undef USTRINGIFY
 #endif
 
+#ifdef __cplusplus
+#  define register
+#endif
+
 #define COMPILER_FILE __FILE__
 #define COMPILER_LINE __LINE__
 
@@ -250,5 +261,8 @@
 #else
 #  define DEBUG_ONLY(...)
 #endif
+
+#define CHAIN_HEAD() if(false) {}
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
 
 #endif //PROJECT3_CONFIG_HPP

@@ -37,4 +37,10 @@
 
 #define $invoke_winapi(fn, err, ...) API_INVOKE_WINAPI(fn, err __VA_OPT__(,) __VA_ARGS__)
 
+template <typename T>
+T typed_alloc(std::size_t sz) noexcept {
+    auto* ptr = (T)malloc(sz);
+    return std::launder(ptr);
+}
+
 #endif //PROJECT3_TEST_WINAPI_HPP
