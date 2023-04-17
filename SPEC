@@ -1,0 +1,35 @@
+FILE STRUCTURE:
+    [includes]
+        [stl includes]
+        [absolute includes]
+        [relative includes]
+    [macros]
+        [object like macros]
+        [function like macros]
+    [exposed definitions]
+    [namespace definitions]
+    [extracted namespace definitions]
+
+CLASS STRUCTURE:
+    [constructors]
+        [value constructors]
+        [copy constructors]
+        [move constructors]
+        [destructor]
+    [functions]
+        [exposed functions] <STATIC_BOUND>
+        [internal functions] -> "_ prefix"
+    [members]
+        [static:bound:constexpr] <ACCESS_ORDER>
+
+[[ACCESS_ORDER]]
+ACCESS SPECIFIER ORDER:
+    [public:protected]
+    [private] -> "_ prefix"
+
+[[STATIC_BOUND]]
+STATIC OR BOUND:
+    [static] <ACCESS_ORDER>
+    [bound]  <ACCESS_ORDER>
+        [non const]
+        [const]
