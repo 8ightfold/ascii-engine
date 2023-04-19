@@ -1,6 +1,17 @@
 #include "audiointerface.hpp"
 
 namespace audio {
+    XAudioInterface::XAudioInterface() {
+        if(FAILED( XAudio2Create(&_audio_interface, 0, XAUDIO2_DEFAULT_PROCESSOR) )) {
+            FATAL("Failed to create XAudio2 instance.");
+        }
+
+        if(FAILED( _audio_interface->CreateMasteringVoice(&_output_device, XAUDIO2_DEFAULT_CHANNELS,
+        XAUDIO2_DEFAULT_SAMPLERATE, 0, nullptr, nullptr, AudioCategory_GameEffects) )) {
+            FATAL("Failed to create XAudio2 mastering voice.");
+        }
+    }
+
     XAudioInterface::~XAudioInterface() {
         for(auto&& [name, source] : _pipeline_sources) source.release();
         if(_output_device) _output_device->DestroyVoice();
@@ -9,17 +20,19 @@ namespace audio {
         --_get_count();
     }
 
-    XAudioInterface XAudioInterface::create_interface() NOEXCEPT {
-        static int count = 0;
-        if(count) assert(!"FATAL: Only one XAudioInterface instance may exist at a time!");
-
+    void XAudioInterface::initialize() NOEXCEPT {
         if(FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) {
-            assert(!"Failed to initialize COM!");
+            FATAL("Failed to initialize COM.");
         }
+    }
+
+    XAudioInterface XAudioInterface::create() NOEXCEPT {
+        int& count = _get_count();
+        if(count) FATAL("Only one XAudioInterface instance may exist at a time.");
 
         XAudioInterface interface {};
 
-        ++_get_count();
+        ++count;
         return interface;
     }
 

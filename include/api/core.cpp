@@ -66,6 +66,28 @@ namespace api {
         return *this;
     }
 
+    static std::string parse_pretty_func(std::string str) NOEXCEPT /* NOLINT */ {
+    #if COMPILER_FUNCTION_CLASSIC == 0
+        std::size_t location = str.rfind(')');
+        if (location == std::string::npos) {
+            return str;
+        } else {
+            return str.substr(0, location + 1);
+        }
+    #endif
+    }
+
+    NORETURN void fatal_error(const char* filename, const char* func, int line, const std::string& err) {
+        DEBUG_ONLY(
+                std::cerr << filename << ":" << line << '\n';
+                std::cerr << "In '" << parse_pretty_func(func) << "'\n";
+        )
+        std::cerr << "FATAL: " << err << '\n';
+        std::cerr << "Press [esc/return] to continue..." << std::endl;
+        while(not (WIN_PRESSED(VK_ESCAPE) or WIN_PRESSED(VK_RETURN))) {}
+        std::exit(-1);
+    }
+
     void throw_last_error(const char* filename, int line, LPTSTR lpszFunction, bool exit_on_error) {
         LPVOID lpMsgBuf;
         LPTSTR lpOutBuf;
@@ -82,15 +104,15 @@ namespace api {
                                       (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
         std::size_t out_size = LocalSize(lpOutBuf) / sizeof(TCHAR);
         StringCchPrintf((LPTSTR)lpOutBuf,out_size,
-                        TEXT("os error: \"%s\" failed with error %d; %s"),
+                        TEXT("OS error: \"%s\" failed with error %d; %s"),
                         lpszFunction, err_code, lpMsgBuf);
 
         std::string throw_buf { lpOutBuf };
         LocalFree(lpMsgBuf);
         LocalFree(lpOutBuf);
-        DEBUG_ONLY( std::cout << filename << ": " << line << '\n'; )
+        DEBUG_ONLY( std::cout << filename << ":" << line << '\n'; )
         std::cout << throw_buf << std::endl;
-        if(exit_on_error) std::cout << "press [esc] to continue...";
+        if(exit_on_error) std::cout << "Press [esc] to continue...";
         while(not (GetAsyncKeyState(VK_ESCAPE) & 0x1)) {}
         if(exit_on_error) std::exit(-2);
     }

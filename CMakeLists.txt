@@ -19,3 +19,8 @@ target_compile_definitions(project3 PUBLIC -DCOMPILER_DEBUG=1)
 
 add_executable(project3_test driver.cpp include/resources.o)
 target_link_libraries(project3_test PUBLIC project3 xaudio2_8)
+
+
+add_executable(uigen uigen/driver.cpp uigen/core/fileloader.cpp uigen/parser/filecontext.cpp
+        uigen/parser/filesystem.cpp uigen/parser/globalcontext.cpp uigen/parser/parsercore.cpp uigen/parser/parserconstruct.cpp)
+target_include_directories(uigen PUBLIC uigen)

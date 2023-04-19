@@ -147,8 +147,7 @@ namespace api {
                 return &_buffers[_selected_buffer];
             }
             else UNLIKELY {
-                assert(!"operator->(): Framebuffers have not been initialized.");
-                unreachable();
+                FATAL("Framebuffers have not been initialized.");
             }
         }
 
@@ -157,8 +156,7 @@ namespace api {
                 return { _buffers[_selected_buffer] };
             }
             else UNLIKELY {
-                assert(!"get_active_buffer(): Framebuffers have not been initialized.");
-                unreachable();
+                FATAL("Framebuffers have not been initialized.");
             }
         }
 

@@ -13,7 +13,11 @@
 
 
 #define debug_assert(cond, message) DEBUG_ONLY( assert(cond && message) )
-#define debug_printf(fmt, ...) DEBUG_ONLY( std::printf(fmt __VA_OPT__(,) __VA_ARGS__) )
+#define debug_printf(fmt, ...) do { DEBUG_ONLY( std::printf(fmt __VA_OPT__(,) __VA_ARGS__); ) } while(0)
+
+#define FATAL(err) api::fatal_error(COMPILER_FILE, COMPILER_FUNCTION, COMPILER_LINE, err)
+#define WIN_PRESSED(sc) [](int scancode) -> bool { \
+return ((scancode) & 0x0001) || ((scancode) & 0x8000); }(GetAsyncKeyState(sc))
 
 namespace api {
     template <typename T, std::size_t N> struct Vec;
@@ -139,6 +143,7 @@ namespace api {
         T* _data = nullptr;
     };
 
+    NORETURN void fatal_error(const char* filename, const char* func, int line, const std::string& err);
     void throw_last_error(const char* filename, int line, LPTSTR lpszFunction, bool exit_on_error = true);
     NORETURN FORCE_INLINE void unreachable() { UNREACHABLE(); }
 }

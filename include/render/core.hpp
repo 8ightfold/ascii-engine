@@ -17,6 +17,9 @@
 #define S3L_MAX_PIXELS 3686400
 #define S3L_PIXEL_FUNCTION s3l_draw_pixel
 #define S3L_PERSPECTIVE_CORRECTION 2
+#define SCALE_3D_RENDERING 1
+#define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / (4 * SCALE_3D_RENDERING))
+#define S3L_Z_BUFFER 1
 #include <render/small3dlib.h>
 
 #include <api/core.hpp>

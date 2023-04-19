@@ -7,21 +7,15 @@
 namespace audio {
     struct XAudioInterface {
     private:
-        XAudioInterface() {
-            if(FAILED( XAudio2Create(&_audio_interface, 0, XAUDIO2_DEFAULT_PROCESSOR) ))
-                assert(!"Failed to create XAudio2 instance!");
-
-            if(FAILED( _audio_interface->CreateMasteringVoice(&_output_device, XAUDIO2_DEFAULT_CHANNELS,
-                                                              XAUDIO2_DEFAULT_SAMPLERATE, 0, nullptr, nullptr, AudioCategory_GameEffects) ))
-                assert(!"Failed to create XAudio2 mastering voice!");
-        }
+        XAudioInterface();
 
     public:
         XAudioInterface(const XAudioInterface&) = delete;
         XAudioInterface(XAudioInterface&&) = default;
 
         ~XAudioInterface();
-        static XAudioInterface create_interface() NOEXCEPT;
+        static void initialize() NOEXCEPT;
+        static XAudioInterface create() NOEXCEPT;
 
         XAudioChannel& register_source(const std::string& name, SourceType type = SourceType::eSingleInstance) NOEXCEPT;
         void start_source(const std::string& name) NOEXCEPT;

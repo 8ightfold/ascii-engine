@@ -30,8 +30,8 @@ namespace audio {
         auto* fmt = (BYTE*)memmem(_resource_data, _resource_size, "fmt ", 4);
 
         if(fmt == nullptr) {
-            std::cerr << "fmt chunk not found for '" << _filename << "'!" << std::endl;
-            std::exit(-1);
+            std::string err = "fmt chunk not found for '" + _filename + "'.";
+            FATAL(err);
         }
 
         std::memcpy(&wfx_size, fmt + sizeof(DWORD), sizeof(DWORD));
@@ -43,8 +43,8 @@ namespace audio {
         auto* data = (BYTE*)memmem(_resource_data, _resource_size, "data", 4);
 
         if(data == nullptr) {
-            std::cerr << "data chunk not found for '" << _filename << "'!" << std::endl;
-            std::exit(-1);
+            std::string err = "data chunk not found for '" + _filename + "'.";
+            FATAL(err);
         }
 
         std::memcpy(&data_size, data + sizeof(DWORD), sizeof(DWORD));

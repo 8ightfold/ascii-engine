@@ -4,6 +4,7 @@
 #include <api/timer.hpp>
 
 #include <ui/strided_memcpy.hpp>
+#include <ui/core.hpp>
 #include <render/core.hpp>
 #include <audio/audiointerface.hpp>
 
@@ -16,7 +17,7 @@ static int esprintf(char* string, const char* format, ...);
 
 int main(int argc, char* argv[]) {
     api::Console::initialize();
-    auto audio_interface = audio::XAudioInterface::create_interface();
+    audio::XAudioInterface::initialize();
 
     api::Console window({
             .fullscreen = api::on,
@@ -29,17 +30,19 @@ int main(int argc, char* argv[]) {
     framebuffer.initialize_buffers();
 
     api::KeyboardInput keyboard;
-    api::KeypressHandlerFactory khf(keyboard);
     api::MouseInput mouse;
     api::Timer timer, seconds;
     constexpr double framerate_ms = 1000.0 / 120.0;
 
+    auto audio_interface = audio::XAudioInterface::create();
     audio_interface.register_source("wind", audio::eLoopingInstance);
     audio_interface.register_source("walking");
     audio_interface.register_source("boing", audio::eCircularInstance);
 
+    api::KeypressHandlerFactory khf(keyboard);
     const api::KeypressHandler ESCAPE = khf(VK_ESCAPE, api::eSingle);
     const api::KeypressHandler RESET = khf('R', api::eSingle);
+    const api::KeypressHandler STOP_LOOP = khf('X', api::eSingle);
 
     DEBUG_ONLY( print_chars(); )
     std::cout << "Press 'Return' to continue...";
@@ -79,6 +82,9 @@ int main(int argc, char* argv[]) {
         timer.stop();
         dur = api::ms_duration(framerate_ms - timer.elapsed_ms());
         std::this_thread::sleep_for(dur);
+
+        if(STOP_LOOP())
+            audio_interface.stop_source("wind");
 
         if(RESET()) {
             audio_interface.stop_source("walking");

@@ -16,8 +16,7 @@ namespace api {
         if(GetConsoleWindow() == NULL) {
             $invoke_winapi(FreeConsole, 0)();
             if(not AllocConsole()) {
-                std::cerr << "FATAL: AllocConsole() failed." << std::endl;
-                std::exit(-1);
+                FATAL("AllocConsole() failed.");
             }
         }
     }
@@ -123,8 +122,7 @@ namespace api {
     HWND Console::_get_console_window() NOEXCEPT {
         HWND console = GetConsoleWindow();
         if(not console) {
-            std::cerr << "FATAL: Console has not been initialized." << std::endl;
-            std::exit(-1);
+            FATAL("Console has not been initialized.");
         }
 
         return console;

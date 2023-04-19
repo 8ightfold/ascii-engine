@@ -1,0 +1,21 @@
+#ifndef PROJECT3_TEST_CONFIG_FUNCTIONS_HPP
+#define PROJECT3_TEST_CONFIG_FUNCTIONS_HPP
+
+#define COMPILER_USTRINGIFY_VER(...) EXPAND(CAT(CAT(U, COMPILER_UNICODE_VERSION), STRINGIFY)(__VA_ARGS__))
+
+#define XCAT(x, y) x ## y
+#define CAT(x, y) XCAT(x, y)
+#define TRICAT(x, y, z) CAT(CAT(x, y), z)
+#define EXPAND(...) __VA_ARGS__
+#define EAT(...)
+
+#define XSTRINGIFY(...) #__VA_ARGS__
+#define STRINGIFY(...) XSTRINGIFY(__VA_ARGS__)
+#define LSTRINGIFY(...) CAT(L, XSTRINGIFY(__VA_ARGS__))
+#define RSTRINGIFY(...) CAT(R, XSTRINGIFY(__raw__(__VA_ARGS__)__raw__))
+#define U8STRINGIFY(...) CAT(u8, XSTRINGIFY(__VA_ARGS__))
+#define U16STRINGIFY(...) CAT(u, XSTRINGIFY(__VA_ARGS__))
+#define U32STRINGIFY(...) CAT(U, XSTRINGIFY(__VA_ARGS__))
+#define USTRINGIFY(...) COMPILER_USTRINGIFY_VER(__VA_ARGS__)
+
+#endif //PROJECT3_TEST_CONFIG_FUNCTIONS_HPP
