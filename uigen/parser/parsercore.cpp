@@ -17,6 +17,9 @@ namespace parser {
             std::cerr << "Invalid type close '" << uet.what() << "'" << std::endl;
             this->stacktrace(2);
         }
+        catch(InvalidMetaValue& imv) {
+            std::cerr << "Invalid meta expression '" << imv.what() << "'" << std::endl;
+        }
         catch(InvalidExpression& ie) {
             std::cerr << "Unable to parse expression '" << ie.what() << "'" << std::endl;
         }

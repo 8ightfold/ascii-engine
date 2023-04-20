@@ -1,7 +1,7 @@
 <class name="exit_ctx">
     <coords=[.device.x, .device.y]>
     <color=[0.0, 0.7]>
-    <input link="pop{}"><\input>
+    <input link={pop()}><\input>
     <body>
         <class name="buttons">
             <coords=[.parent.x / 2.5, .parent.y / 2]>

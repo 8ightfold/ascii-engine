@@ -6,24 +6,6 @@
 #include <parser/globalcontext.hpp>
 
 namespace parser {
-    enum struct ExpressionType {
-        eInvalid, eMeta, eNode, eSkip,
-    };
-
-    struct InvalidExpression : std::exception {
-        [[nodiscard]] const char* what() const noexcept override { return _data.c_str(); }
-        explicit InvalidExpression(std::string_view sv) : _data(sv) {}
-
-    protected:
-        std::string _data;
-    };
-
-    struct UnbalancedExpressionTypes : InvalidExpression {
-        [[nodiscard]] const char* what() const noexcept override { return _data.c_str(); }
-        explicit UnbalancedExpressionTypes(std::string_view sv) : InvalidExpression(sv) {}
-    };
-
-
     struct FileContext {
         struct FileContextParser {
             explicit FileContextParser(FileContext* ctx) : _ctx(ctx) {}

@@ -5,7 +5,7 @@
 #define NODE_VALUE_REGEXP R"r(([\w.:]+)=(\w+|"[^"]*"|\[(?:\s*[\w.:]+\s*,?)+\]|\{(?:\s*[^,]+\s*,?)+\}))r"
 
 namespace parser {
-    static void extract_values(FileContext::TypeContext& top, std::string_view values) {
+    static void extract_values(TypeContext& top, std::string_view values) {
         constexpr auto range = ctre::range<NODE_VALUE_REGEXP>;
         auto matched = range(values);
 
@@ -36,6 +36,7 @@ namespace parser {
     void FileContext::parse() {
         switch(_last_type) {
             case ExpressionType::eMeta: {
+                _global_ctx->parse_meta(_last_value);
                 break;
             }
             case ExpressionType::eNode: {
@@ -81,7 +82,7 @@ namespace parser {
         }
 
         _set_top_level();
-
+        // Move module construct to global context
         if(_top_level) std::cout << std::endl;
     }
 
@@ -89,7 +90,7 @@ namespace parser {
         return (_top_level = _type_stack.empty());
     }
 
-    FileContext::TypeContext FileContext::_pop_stack() {
+    TypeContext FileContext::_pop_stack() {
         if(not _type_stack.empty()) {
             auto tctx = std::move(_type_stack.top());
             _type_stack.pop();

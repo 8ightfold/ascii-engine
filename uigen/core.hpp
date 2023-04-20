@@ -7,6 +7,8 @@
     You can find the repo here: https://github.com/hanickadot/compile-time-regular-expressions
  */
 
+#define UIGEN_VERSION "0.3.0"
+
 #define XCAT(x, y) x ## y
 #define CAT(x, y) XCAT(x, y)
 #define XSTRINGIFY(...) #__VA_ARGS__
