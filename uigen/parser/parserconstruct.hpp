@@ -46,7 +46,14 @@ namespace parser {
     };
 
     enum struct ExpressionType {
-        eInvalid, eMeta, eNode, eSkip,
+        /// Types that aren't parseable
+        eInvalid,
+        /// Anything beginning with # (eg. callbacks, directives, etc)
+        eMeta,
+        /// For the "normal" type you'll run into
+        eNode,
+        /// Used for things such as comments
+        eSkip,
     };
 
 
@@ -105,6 +112,7 @@ namespace parser {
 
     struct ClassConstruct {
     private:
+        std::string_view _name;
         std::deque<ItemConstruct> _class_items;
         std::deque<ClassConstruct> subclasses;
     };

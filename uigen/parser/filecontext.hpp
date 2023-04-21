@@ -7,6 +7,10 @@
 
 namespace parser {
     struct FileContext {
+        /**
+         * The type passed to RegexExpr on construction.
+         * It must exist as long as the RegexExpr does.
+         */
         struct FileContextParser {
             explicit FileContextParser(FileContext* ctx) : _ctx(ctx) {}
 
@@ -54,6 +58,7 @@ namespace parser {
         void _parse_node();
         bool _set_top_level();
         TypeContext _pop_stack();
+        void _extract_values(TypeContext& top, std::string_view values);
         [[nodiscard]] bool _compare_top_type(std::string_view type) const;
 
     private:
@@ -66,7 +71,9 @@ namespace parser {
         std::string_view _last_value;
         ExpressionType _last_type = ExpressionType::eInvalid;
 
+        /// Only active above debug level 2
         Stack<TypeContext> _type_stack;
+        bool _lock_next = false;
         bool _finished = false;
         bool _top_level = true;
 

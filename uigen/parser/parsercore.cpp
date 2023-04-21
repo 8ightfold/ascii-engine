@@ -15,7 +15,7 @@ namespace parser {
         }
         catch(UnbalancedExpressionTypes& uet) {
             std::cerr << "Invalid type close '" << uet.what() << "'" << std::endl;
-            this->stacktrace(2);
+            this->stacktrace();
         }
         catch(InvalidMetaValue& imv) {
             std::cerr << "Invalid meta expression '" << imv.what() << "'" << std::endl;
@@ -26,9 +26,14 @@ namespace parser {
         catch(std::exception& e) {
             std::cerr << e.what() << std::endl;
         }
+        catch(...) {
+            std::cerr << "Something has gone terribly wrong (caught non exception throw). Exiting." << std::endl;
+            std::exit(-1);
+        }
     }
 
-    void ParserCore::stacktrace(int max_depth) {
+    void ParserCore::stacktrace() {
+        std::size_t max_depth = _global_ctx->get_stacktrace_depth();
         _completed = false;
         while(not _ctx_stack.empty() && max_depth) {
             print_top_frame();
@@ -57,7 +62,7 @@ namespace parser {
 
             while(not current_ctx->finished()) {
                 current_ctx->next();
-                current_ctx->print_last();
+                DEBUG_ONLY(3, current_ctx->print_last();)
                 current_ctx->parse();
             }
 

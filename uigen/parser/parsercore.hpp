@@ -11,7 +11,7 @@ namespace parser {
         ParserCore(GlobalContext* global_ctx);  // NOLINT
         void run_parser();
 
-        void stacktrace(int max_depth = 1);
+        void stacktrace();
         void print_top_frame();
         void check_completeness() const;
 

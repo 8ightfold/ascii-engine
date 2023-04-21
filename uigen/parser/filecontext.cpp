@@ -5,16 +5,6 @@
 #define NODE_VALUE_REGEXP R"r(([\w.:]+)=(\w+|"[^"]*"|\[(?:\s*[\w.:]+\s*,?)+\]|\{(?:\s*[^,]+\s*,?)+\}))r"
 
 namespace parser {
-    static void extract_values(TypeContext& top, std::string_view values) {
-        constexpr auto range = ctre::range<NODE_VALUE_REGEXP>;
-        auto matched = range(values);
-
-        for(auto [_, name, value] : matched) {
-            top->emplace(name, value);
-            std::cout << "  pushed '" << name << "': " << value << std::endl;
-        }
-    }
-
     static std::string_view pick_type_decl(auto& type, auto& start) {
         if(type.size()) return type.to_view();
         else if(start.size()) return start.to_view();
@@ -31,7 +21,7 @@ namespace parser {
     }
 
     bool FileContext::finished() const { return _expr->finished(); }
-    void FileContext::next() { _last_value = _expr->next(); }
+    void FileContext::next() { if(not _lock_next) _last_value = _expr->next(); }
 
     void FileContext::parse() {
         switch(_last_type) {
@@ -44,7 +34,6 @@ namespace parser {
                 break;
             }
             case ExpressionType::eInvalid: {
-                std::cout << "UNKNOWN" << std::endl;
                 throw InvalidExpression(_last_value);
             }
             default: return;
@@ -58,22 +47,24 @@ namespace parser {
 
         if(not type_decl.empty()) {
             _type_stack.emplace(type_decl);
-            std::cout << " added '" << type_decl << "'" << std::endl;
+            DEBUG_ONLY(2, std::cout << " added '" << type_decl << "'" << std::endl;)
         }
 
         _set_top_level();
 
         if(values) {
             auto& top = _type_stack.top();
-            extract_values(top, values);
+            _extract_values(top, values);
         }
         else if(end) {
             if(_compare_top_type(end)) {
-                std::cout << "  popped '" << (std::string_view)end << "'" << std::endl;
+                DEBUG_ONLY(2, std::cout << "  popped '" << (std::string_view)end << "'" << std::endl;)
                 auto last_ctx = _pop_stack();
-                for(auto&& [name, value] : last_ctx.values()) {
-                    std::cout << '\t' << name << ": " << value << std::endl;
-                }
+                DEBUG_ONLY(2,
+                    for(auto&& [name, value] : last_ctx.values()) {
+                        std::cout << '\t' << name << ": " << value << std::endl;
+                    }
+                )
             }
             else throw UnbalancedExpressionTypes(_last_value);
         }
@@ -82,8 +73,7 @@ namespace parser {
         }
 
         _set_top_level();
-        // Move module construct to global context
-        if(_top_level) std::cout << std::endl;
+        DEBUG_ONLY(2, if(_top_level) std::cout << std::endl;)
     }
 
     bool FileContext::_set_top_level() {
@@ -98,6 +88,16 @@ namespace parser {
         }
 
         throw std::runtime_error("Called pop() with stack.");
+    }
+
+    void FileContext::_extract_values(TypeContext& top, std::string_view values) {
+        constexpr auto range = ctre::range<NODE_VALUE_REGEXP>;
+        auto matched = range(values);
+
+        for(auto [_, name, value] : matched) {
+            top->emplace(name, value);
+            DEBUG_ONLY(2, std::cout << "  pushed '" << name << "': " << value << std::endl;)
+        }
     }
 
     bool FileContext::_compare_top_type(std::string_view type) const {
