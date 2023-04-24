@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <unordered_map>
+#include <vector>
 #include <core.hpp>
 
 using namespace std::literals;
@@ -46,7 +47,23 @@ namespace parser {
     };
 
     enum struct ExpressionType {
-        eInvalid, eMeta, eNode, eSkip,
+        /// Types that aren't parseable
+        eInvalid,
+        /// Anything beginning with # (eg. callbacks, directives, etc)
+        eMeta,
+        /// For the "normal" type you'll run into
+        eNode,
+        /// Used for things such as comments
+        eSkip,
+    };
+
+    /*
+     * I think this one explains itself
+     */
+    enum struct ClassType {
+        eClass,
+        eAlias,
+        eUnregistered,
     };
 
 
@@ -93,24 +110,27 @@ namespace parser {
 
     private:
         std::string_view _name;
-        std::deque<_type_rep_t> _types;
+        std::vector<_type_rep_t> _types;
     };
 
     struct ItemConstruct {
     private:
         std::string_view _name;
-        std::deque<std::string_view> _values;
+        std::vector<std::string_view> _values;
         ItemType _type;
     };
 
     struct ClassConstruct {
     private:
-        std::deque<ItemConstruct> _class_items;
-        std::deque<ClassConstruct> subclasses;
+        std::string_view _name;
+        std::vector<ItemConstruct> _class_items;
+        std::vector<ClassConstruct> subclasses;
     };
 
     struct AliasConstruct {
     private:
+        // TODO: Implement alias
+        bool _is_complete;
     };
 
     struct ModuleConstruct {

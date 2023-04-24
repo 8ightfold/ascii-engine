@@ -1,11 +1,20 @@
 #ifndef PROJECT3_TEST_GLOBALCONTEXT_HPP
 #define PROJECT3_TEST_GLOBALCONTEXT_HPP
 
+#include <chrono>
 #include <core.hpp>
 #include <parser/parserconstruct.hpp>
 #include <parser/filesystem.hpp>
 
 namespace parser {
+    using steady_clock = std::chrono::steady_clock;
+    using time_point = std::chrono::steady_clock::time_point;
+
+    /**
+     * TypeContext is used to pass type data in debug modes.
+     * It is used to do stacktraces, and is quite light on it's own.
+     * The only problem is it isn't convenient for parsing.
+     */
     struct TypeContext {
         using _map_type = UnorderedMap<std::string_view>;
         explicit TypeContext(std::string_view type_name);
@@ -18,6 +27,33 @@ namespace parser {
         std::string_view _type_name;
         _map_type _type_values;
         bool _fundamental = false;
+    };
+
+    /**
+     * SlimTypeContext is used to pass parsed node data to the GlobalContext.
+     * It can be used to represent nodes in a much flatter way.
+     */
+    struct SlimTypeContext {
+        /**
+         * Defines an item type (this cannot be changed).
+         */
+        SlimTypeContext() = default;
+
+        /**
+         * Defines a class/alias type (this cannot be changed).
+         * @param type The type to be registered as.
+         */
+        SlimTypeContext(std::string_view type);
+
+        [[nodiscard]] bool is_type() const;
+
+    private:
+        /// Used for class/alias types
+        std::string_view _type;
+        /// Used to store the name for item types
+        std::string_view _name;
+        /// Used to store unparsed item data
+        std::string_view _data;
     };
 
     /**
@@ -36,6 +72,13 @@ namespace parser {
         void set_dirs(const fs::path& exe_dir, const fs::path& core_dir);
 
         void set_package_name(std::string_view name);
+        void set_debug_level(std::string_view value_str);
+        void set_output_filename(std::string_view name);
+        void set_stacktrace_depth(std::string_view depth_str);
+
+        void enable_timer();
+        void start_timer();
+        void stop_timer();
 
         void parse_meta(std::string_view meta);
 
@@ -44,18 +87,15 @@ namespace parser {
          */
         void verify_core() const;
 
-        /**
-         * Checks if the color mode has been explicitly defined.
-         * This will allow us to throw an error if it is declared multiple times.
-         */
-        [[nodiscard]] bool defined_colormode() const;
+        bool check_debug_level(std::size_t value) const;
 
         /*
-         * Standard getter functions. Self explanatory.
+         * Standard getter functions. Pretty self-explanatory.
          */
         [[nodiscard]] fs::path get_exe() const;
         [[nodiscard]] fs::path get_core() const;
         [[nodiscard]] std::string_view get_package_name() const;
+        [[nodiscard]] std::size_t get_stacktrace_depth() const;
 
     private:
         void _parse_directive(std::string_view directive, std::string_view value);
@@ -65,7 +105,12 @@ namespace parser {
     private:
         fs::path _exe_dir;
         fs::path _core_dir;
+        std::size_t _debug_level = 0;
+        std::string_view _output_filename;
         std::string_view _package_name;
+        std::size_t _stacktrace_depth = 1;
+        bool _do_timing = false;
+        time_point _time_start;
         std::unordered_map<std::string, ModuleConstruct> _modules;
 
         ColorType _color_type = ColorType::eDefault;

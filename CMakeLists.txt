@@ -12,7 +12,7 @@ add_library(project3 STATIC
 
         include/audio/core.cpp include/audio/audiochannel.cpp include/audio/audiointerface.cpp
         include/audio/source_types/audiosource_single.cpp include/audio/source_types/audiosource_circular.cpp
-        include/audio/source_types/audiosource_looping.cpp include/audio/source_types/iaudiosource.cpp)
+        include/audio/source_types/audiosource_looping.cpp include/audio/source_types/iaudiosource.cpp include/render/core.cpp)
 
 target_include_directories(project3 PUBLIC include)
 target_compile_definitions(project3 PUBLIC -DCOMPILER_DEBUG=1)
@@ -22,5 +22,5 @@ target_link_libraries(project3_test PUBLIC project3 xaudio2_8)
 
 
 add_executable(uigen uigen/driver.cpp uigen/core/fileloader.cpp uigen/parser/filecontext.cpp
-        uigen/parser/filesystem.cpp uigen/parser/globalcontext.cpp uigen/parser/parsercore.cpp uigen/parser/parserconstruct.cpp)
+        uigen/parser/filesystem.cpp uigen/parser/globalcontext.cpp uigen/parser/parsercore.cpp uigen/parser/parserconstruct.cpp uigen/cli.cpp)
 target_include_directories(uigen PUBLIC uigen)

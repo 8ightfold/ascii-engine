@@ -20,6 +20,13 @@ namespace parser {
     const TypeContext::_map_type& TypeContext::values() const { return _type_values; }
 
 
+    SlimTypeContext::SlimTypeContext(std::string_view type) : _type(type) {}
+
+    bool SlimTypeContext::is_type() const {
+        return (not _type.empty());
+    }
+
+
     void GlobalContext::set_dirs(const fs::path& exe_dir, const fs::path& core_dir) {
         _exe_dir = exe_dir;
         _core_dir = core_dir;
@@ -28,6 +35,59 @@ namespace parser {
     void GlobalContext::set_package_name(std::string_view name) {
         _package_name = name;
     }
+
+    void GlobalContext::set_debug_level(std::string_view value_str) {
+        std::size_t value = 0;
+        auto conversion_result = std::from_chars(value_str.begin(), value_str.end(), value);
+
+        if (conversion_result.ec == std::errc::invalid_argument) {
+            std::cout << "Unable to set debug level to '" << value_str << "'." << std::endl;
+            return;
+        }
+
+        if(value > 3) value = 3;
+        _debug_level = value;
+    }
+
+    void GlobalContext::set_output_filename(std::string_view name) {
+        _output_filename = name;
+    }
+
+    void GlobalContext::set_stacktrace_depth(std::string_view depth_str) {
+        std::size_t depth = 0;
+        auto conversion_result = std::from_chars(depth_str.begin(), depth_str.end(), depth);
+
+        if (conversion_result.ec == std::errc::invalid_argument) {
+            std::cout << "Unable to set stacktrace depth to '" << depth_str << "'." << std::endl;
+            return;
+        }
+
+        _stacktrace_depth = depth;
+    }
+
+
+    void GlobalContext::enable_timer() {
+        _do_timing = true;
+    }
+
+    void GlobalContext::start_timer() {
+        _time_start = steady_clock::now();
+    }
+
+    void GlobalContext::stop_timer() {
+        auto time_end = steady_clock::now();
+        if(_do_timing) {
+            std::chrono::duration<double, std::milli> duration = time_end - _time_start;
+            double length = duration.count();
+            if(length < 100.0) {
+                std::cout << "Codegen took " << length << " milliseconds." << std::endl;
+            }
+            else {
+                std::cout << "Codegen took " << (length / 1000.0) << " seconds." << std::endl;
+            }
+        }
+    }
+
 
     void GlobalContext::parse_meta(std::string_view meta) {
         constexpr auto matcher = ctre::match<META_REGEXP>;
@@ -39,18 +99,21 @@ namespace parser {
         else throw InvalidMetaValue(meta);
     }
 
-    bool GlobalContext::defined_colormode() const { return _color_type != ColorType::eDefault; }
-
-    fs::path GlobalContext::get_exe() const { return _exe_dir; }
-    fs::path GlobalContext::get_core() const { return _core_dir; }
-    std::string_view GlobalContext::get_package_name() const { return _package_name; }
-
     void GlobalContext::verify_core() const {
         if(not fs::exists(_core_dir / "core.uxi")) {
             std::cerr << "No core file found at " << _core_dir << "." << std::endl;
             std::exit(-1);
         }
     }
+
+    bool GlobalContext::check_debug_level(std::size_t value) const {
+        return (_debug_level >= value);
+    }
+
+    fs::path GlobalContext::get_exe() const { return _exe_dir; }
+    fs::path GlobalContext::get_core() const { return _core_dir; }
+    std::string_view GlobalContext::get_package_name() const { return _package_name; }
+    std::size_t GlobalContext::get_stacktrace_depth() const { return _stacktrace_depth; }
 
     void GlobalContext::_parse_directive(std::string_view directive, std::string_view value) {
         if(directive == "colortype") {

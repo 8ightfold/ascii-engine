@@ -7,27 +7,28 @@
 #enable device
 #enable intluminance
 
-<alias type=button, name="button", inputs=[name, text, link]>
-    <.type name=[[name]], align=".center.y">
+// TODO: Change back to "type=button"/".type"
+<alias name="button", inputs=[name, text, link]>
+    <button name=[[name]], align=".center.y">
         <color=[0.3, 1.0]>
         <text=[[text]]>
         <onhover={.color = [0.9, 1.0]}>
         <onclick=[[link]]>
-    <\.type>
+    <\button>
 <\alias>
 
 <class name="menu">
     <coords=[.device.x, .device.y]>
     <color=[0.0, 1.0]>
-    <input link={push(exit.exit_ctx)}><\input>
+    <input link={push(exit.exit_ctx)}>
     <body>
         <class name="buttons", align=".center">
             <coords=[.parent.x / 2, .parent.y / 1.5]>
             <color=[0.1, 1.0]>
             <body>
                 <title="CRYPT RAIDER", align=".center.y">
-                <core.button name="start", text="Start Game", link={::start_game()}><\core.button>
-                <core.button name="exit", text="Quit", link={push(exit.exit_ctx)}><\core.button>
+                <core.button name="start", text="Start Game", link={::start_game()}>
+                <core.button name="exit", text="Quit", link={push(exit.exit_ctx)}>
             <\body>
         <\class>
     <\body>

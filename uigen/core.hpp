@@ -7,7 +7,7 @@
     You can find the repo here: https://github.com/hanickadot/compile-time-regular-expressions
  */
 
-#define UIGEN_VERSION "0.3.0"
+#define UIGEN_VERSION "0.5.0"
 
 #define XCAT(x, y) x ## y
 #define CAT(x, y) XCAT(x, y)
@@ -20,6 +20,8 @@
 #define INIT_GCTX(...) parse_args(argc, argv)
 
 #define BIND_REGEX(expr) parser::RegexBinder<expr, expr>
+#define DEBUG_LEVEL(level) _global_ctx->check_debug_level(level)
+#define DEBUG_ONLY(level, ...) if(DEBUG_LEVEL(level)) { __VA_ARGS__ }
 
 #include <core/fileloader.hpp>
 #include <core/utils.hpp>

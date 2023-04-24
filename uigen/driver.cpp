@@ -1,10 +1,12 @@
 #include <core.hpp>
 #include <parser/parsercore.hpp>
+#include <cli.hpp>
 
-/*  UXI Documentation:
+/**
+ * UXI Documentation:
  *  GENERAL INFO:
- *  When generating code, you must provide a package name. This will be used by the generated
- *  class, and will be how you bind it to your renderer, as well as how context pointers will be created.
+ *  When generating code, you must provide a package name. This is by the generated class,
+ *  and will be how you bind it to your renderer, as well as how context pointers will be created.
  *  While it is only necessary to bind the parent class to the generated one,
  *  some intrinsics (such as device contexts) will not work as intended. You can #enable features like this.
  *
@@ -39,28 +41,15 @@
  *      pop()
  */
 
-static parser::GlobalContext* parse_args(int argc, char* argv[]) {
-    if(not argv[1]) {
-        std::cerr << "No input path specified." << std::endl;
-        std::exit(-1);
-    }
-
-    auto* global_ctx = new parser::GlobalContext();
-
-    fs::path exe_path = argv[0];
-    fs::path base_path = argv[1];
-
-    global_ctx->set_dirs(exe_path, base_path);
-    global_ctx->verify_core();
-    global_ctx->set_package_name("example");
-
-    return global_ctx;
-}
-
 int main() {
     auto* global_ctx = INIT_GCTX();
     auto parse = parser::create_parser(global_ctx);
+    global_ctx->start_timer();
 
+    std::cout << "Parsing..." << std::endl;
     parse.run_parser();
     parse.check_completeness();
+
+    global_ctx->stop_timer();
+    delete global_ctx;
 }

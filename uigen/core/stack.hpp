@@ -37,6 +37,8 @@ namespace parser {
         template <typename...TT>
         decltype(auto) emplace(TT&&...tt) { return _underlying_data.emplace_back(std::forward<TT>(tt)...); }
 
+        void erase() { _underlying_data.erase(); }
+
         void pop() { _underlying_data.pop_back(); }
         ref_t top() { return _underlying_data.back(); }
         cref_t top() const { return _underlying_data.back(); }

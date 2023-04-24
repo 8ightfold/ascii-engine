@@ -1869,7 +1869,7 @@ void S3L_drawConfigInit(S3L_DrawConfig *config)
   #error Pixel rendering function (S3L_PIXEL_FUNCTION) not specified!
 #endif
 
-static inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
+inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
 
 /** Serves to accelerate linear interpolation for performance-critical
   code. Functions such as S3L_interpolate require division to compute each
