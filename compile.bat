@@ -1,7 +1,6 @@
 :: Main batch file... expects g++ to be MinGW
 @echo off
 set app_name=../consoleapp.exe
-set parser_name=ui/parser/parser.exe
 set resource_path=include/resources.o
 
 :: Resource file compilation
@@ -23,7 +22,7 @@ if exist %app_name% (
 ) else (
     echo Compiling...
     :: Main compile command
-    g++ %compile_opts% resources.o -o %app_name% ../driver.cpp %api_src% %audio_src% %ui_src% %link_opts%
+    g++ %compile_opts% resources.o -o %app_name% ../driver.cpp %api_src% %audio_src% %render_src% %ui_src% %link_opts%
 )
 :: Wait
 PAUSE
