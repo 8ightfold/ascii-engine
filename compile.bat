@@ -12,7 +12,7 @@ cd include
 :: Windows api interface
 set api_src=api/console.cpp api/core.cpp api/input.cpp api/keypress_handler.cpp api/timer.cpp
 set audio_src=audio/core.cpp audio/audiochannel.cpp audio/audiointerface.cpp audio/source_types/audiosource_single.cpp audio/source_types/audiosource_circular.cpp audio/source_types/audiosource_looping.cpp audio/source_types/iaudiosource.cpp
-set render_src=render/core.cpp
+set render_src=render/core.cpp render/tinyphysicsengine.cpp
 set ui_src=ui/strided_memcpy.cpp
 
 set compile_opts= -std=c++20 -O3 -DCOMPILER_DEBUG=0 -I.

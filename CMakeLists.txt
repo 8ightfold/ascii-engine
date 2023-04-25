@@ -8,11 +8,13 @@ add_library(project3 STATIC
         include/api/console.cpp include/api/input.cpp include/api/core.cpp
         include/api/timer.cpp include/api/timer.cpp include/api/keypress_handler.cpp
 
-        include/ui/strided_memcpy.cpp
+        include/render/core.cpp include/render/tinyphysicsengine.cpp
 
         include/audio/core.cpp include/audio/audiochannel.cpp include/audio/audiointerface.cpp
         include/audio/source_types/audiosource_single.cpp include/audio/source_types/audiosource_circular.cpp
-        include/audio/source_types/audiosource_looping.cpp include/audio/source_types/iaudiosource.cpp include/render/core.cpp)
+        include/audio/source_types/audiosource_looping.cpp include/audio/source_types/iaudiosource.cpp
+
+        include/ui/strided_memcpy.cpp)
 
 target_include_directories(project3 PUBLIC include)
 target_compile_definitions(project3 PUBLIC -DCOMPILER_DEBUG=1)

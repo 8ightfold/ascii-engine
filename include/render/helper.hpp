@@ -2,7 +2,7 @@
 #define PROJECT3_TEST_HELPER_HPP
 
 #include <render/core.hpp>
-#include <render/level_model.hpp>
+#include <level_model.hpp>
 
 #define FPS 240
 #define MSPF (1000 / (FPS))
@@ -259,18 +259,21 @@ TPE_Body tpe_bodies[MAX_BODIES];
 TPE_Joint tpe_joints[MAX_JOINTS];
 TPE_Connection tpe_connections[MAX_CONNECTIONS];
 
-int helper_debugDrawOn = 0,
-        helper_debugDrawOnCountdown = 0;
+int
+helper_debugDrawOn = 0,
+helper_debugDrawOnCountdown = 0;
 
 unsigned int
-        helper_jointsUsed = 0,
-        helper_connectionsUsed = 0;
+helper_jointsUsed = 0,
+helper_connectionsUsed = 0;
 
 TPE_World tpe_world;
 
-int helper_frameStartTime;
-int helper_frameMsLeft;
-int helper_running;
+int
+helper_frameStartTime,
+helper_frameMsLeft,
+helper_running;
+
 std::size_t helper_frame;
 
 S3L_Scene s3l_scene;
@@ -368,15 +371,6 @@ void helper_addBall(TPE_Unit s, TPE_Unit mass)
     _helper_bodyAdded(1,0,mass);
 }
 
-void helper_printCPU(void)
-{
-    printf("CPU (%d FPS): %d%% load\n",FPS,((MSPF - helper_frameMsLeft) * 100) / MSPF);
-}
-
-void sdl_drawPixel(int x, int y, uint8_t r,uint8_t,uint8_t) {
-    render::internal_buffer<char>->get_active_buffer()->set_value({ x, y }, r);
-}
-
 void helper_drawLine2D(int x1, int y1, int x2, int y2, uint8_t r, uint8_t g,
                        uint8_t b)
 {
@@ -395,7 +389,7 @@ void helper_drawLine2D(int x1, int y1, int x2, int y2, uint8_t r, uint8_t g,
         max *= -1;
 
     for (int i = 0; i < max; ++i)
-        sdl_drawPixel(x1 + (x2 * i) / max,y1 + (y2 * i) / max,r,g,b);
+        render::draw_pixel(x1 + (x2 * i) / max, y1 + (y2 * i) / max, r, g);
 }
 
 void helper_drawPoint3D(TPE_Vec3 p, uint8_t r, uint8_t g, uint8_t b)
@@ -412,10 +406,10 @@ void helper_drawPoint3D(TPE_Vec3 p, uint8_t r, uint8_t g, uint8_t b)
     if (p3.x >= 0 && p3.x < S3L_RESOLUTION_X - 1 &&
         p3.y >= 0 && p3.y < S3L_RESOLUTION_Y - 1 && p3.z > 0)
     {
-        sdl_drawPixel(p3.x,p3.y,r,g,b);
-        sdl_drawPixel(p3.x + 1,p3.y,r,g,b);
-        sdl_drawPixel(p3.x,p3.y + 1,r,g,b);
-        sdl_drawPixel(p3.x + 1,p3.y + 1,r,g,b);
+        render::draw_pixel(p3.x, p3.y, r, g);
+        render::draw_pixel(p3.x + 1, p3.y, r, g);
+        render::draw_pixel(p3.x, p3.y + 1, r, g);
+        render::draw_pixel(p3.x + 1, p3.y + 1, r, g);
     }
 }
 
@@ -428,47 +422,34 @@ S3L_Model3D *_helper_drawnModel;
 
 TPE_Vec3 helper_lightDir;
 
+static TPE_Vec3 get_triangle_normal(const S3L_Index* v) {
+#define VEC3C_FROM_IDX(v, c) _helper_drawnModel->vertices[(*v) * 3 + (c)]
+#define VEC3_FROM_IDX(v) TPE_vec3( VEC3C_FROM_IDX(v, 0), VEC3C_FROM_IDX(v, 1), VEC3C_FROM_IDX(v, 2) )
+    TPE_Vec3 a = VEC3_FROM_IDX(v); ++v;
+    TPE_Vec3 b = VEC3_FROM_IDX(v); ++v;
+    TPE_Vec3 c = VEC3_FROM_IDX(v);
+#undef VEC3_FROM_IDX
+#undef VEC3C_FROM_IDX
+
+    return TPE_vec3Normalized(TPE_vec3Cross(TPE_vec3Minus(c,a), TPE_vec3Minus(c,b)));
+}
+
 // TODO: FINISH
 inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *p)
 {
     if (p->triangleIndex != s3l_previousTriangleID)
     {
-        const S3L_Index *v = _helper_drawnModel->triangles
-                             + 3 * p->triangleIndex;
+        const S3L_Index *v = _helper_drawnModel->triangles + 3 * p->triangleIndex;
+        TPE_Vec3 normal = get_triangle_normal(v);
 
-        TPE_Vec3 a = TPE_vec3(
-                _helper_drawnModel->vertices[(*v) * 3],
-                _helper_drawnModel->vertices[(*v) * 3 + 1],
-                _helper_drawnModel->vertices[(*v) * 3 + 2]);
-
-        v++;
-
-        TPE_Vec3 b = TPE_vec3(
-                _helper_drawnModel->vertices[(*v) * 3],
-                _helper_drawnModel->vertices[(*v) * 3 + 1],
-                _helper_drawnModel->vertices[(*v) * 3 + 2]);
-
-        v++;
-
-        TPE_Vec3 c = TPE_vec3(
-                _helper_drawnModel->vertices[(*v) * 3],
-                _helper_drawnModel->vertices[(*v) * 3 + 1],
-                _helper_drawnModel->vertices[(*v) * 3 + 2]);
-
-        TPE_Vec3 normal = TPE_vec3Normalized(TPE_vec3Cross(
-                TPE_vec3Minus(c,a),TPE_vec3Minus(c,b)));
-
-        TPE_Unit intensity = 190 + TPE_vec3Dot(normal,
-                                               helper_lightDir) / 8;
-
-        s3l_rr = (s3l_r * intensity) / 256;
-        s3l_gg = (s3l_g * intensity) / 256;
-        s3l_bb = (s3l_b * intensity) / 256;
+        TPE_Unit intensity = 190 + TPE_vec3Dot(normal, helper_lightDir) / 8;
+        //s3l_gg = TPE_vec3Dot(normal, helper_lightDir) / luminance_scale;
+        s3l_gg = intensity;
 
         s3l_previousTriangleID = p->triangleIndex;
     }
 
-    sdl_drawPixel(p->x,p->y / 2,s3l_rr,s3l_gg,s3l_bb);
+    render::draw_pixel(p->x, p->y / 2, s3l_r, s3l_gg);
 }
 
 void helper_set3DColor(uint8_t r, uint8_t g, uint8_t b)
@@ -477,6 +458,7 @@ void helper_set3DColor(uint8_t r, uint8_t g, uint8_t b)
     s3l_g = g;
     s3l_b = b;
 }
+
 
 void helper_drawModel(S3L_Model3D *model, TPE_Vec3 pos, TPE_Vec3 scale,
                       TPE_Vec3 rot)
@@ -597,14 +579,12 @@ void helper_setHeightmapPoint(uint16_t x, uint16_t y, TPE_Unit height)
 }
 
 
-void helper_init(void)
+void helper_init()
 {
     helper_lightDir = TPE_vec3Normalized(TPE_vec3(300,200,100));
 
     helper_running = 1;
     helper_frame = 0;
-
-    helper_frameMsLeft = 0;
 
     S3L_model3DInit(cubeVertices,S3L_CUBE_VERTEX_COUNT,cubeTriangles,
                     S3L_CUBE_TRIANGLE_COUNT,&cubeModel);
@@ -618,39 +598,6 @@ void helper_init(void)
                     cylinderTriangleIndices,CYLINDER_TRIANGLE_COUNT,&cylinderModel);
 
     S3L_model3DInit(triangleVertices,3,triangleTriangles,2,&triangleModel);
-
-    // build the heightmap 3D model:
-
-    for (int i = 0; i < HEIGHTMAP_3D_POINTS; ++i)
-    {
-        TPE_Vec3 pos = helper_heightmapPointLocation(i);
-
-        heightmapVertices[i * 3] = pos.x;
-        heightmapVertices[i * 3 + 1] = pos.y;
-        heightmapVertices[i * 3 + 2] = pos.z;
-    }
-
-    int index = 0;
-
-    for (int j = 0; j < HEIGHTMAP_3D_RESOLUTION - 1; ++j)
-        for (int i = 0; i < HEIGHTMAP_3D_RESOLUTION - 1; ++i)
-        {
-            heightmapTriangles[index] = j * HEIGHTMAP_3D_RESOLUTION + i;
-            heightmapTriangles[index + 1] = heightmapTriangles[index] + 1;
-            heightmapTriangles[index + 2] = heightmapTriangles[index] + HEIGHTMAP_3D_RESOLUTION;
-
-            heightmapTriangles[index + 3] = heightmapTriangles[index + 1];
-            heightmapTriangles[index + 4] = heightmapTriangles[index + 1] + HEIGHTMAP_3D_RESOLUTION;
-            heightmapTriangles[index + 5] = heightmapTriangles[index + 4] - 1;
-            index += 6;
-        }
-
-    S3L_model3DInit(
-            heightmapVertices,
-            HEIGHTMAP_3D_POINTS * 3,
-            heightmapTriangles,
-            ((HEIGHTMAP_3D_RESOLUTION - 1) * (HEIGHTMAP_3D_RESOLUTION - 1) * 2),
-            &heightmapModel);
 
     S3L_sceneInit(0,1,&s3l_scene);
 

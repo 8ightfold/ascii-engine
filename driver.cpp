@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
 
     framebuffer.swap_buffers();
 
-    audio_interface.start_source("level1");
+    //audio_interface.start_source("level1");
     _main(keyboard, window, khf);
 
     auto screen_coords = (api::dVec2)(window.get_screen_coords() + 1) / (api::dVec2)framebuffer.get_coords();
@@ -110,7 +110,7 @@ TPE_Unit ramp2[6] = { 2000,-5000, 1500,1700, -5000,-500 };
 TPE_Vec3 environmentDistance(TPE_Vec3 p, TPE_Unit maxD)
 {
     // manually created environment to match the 3D model of it
-    TPE_ENV_START( TPE_envAABoxInside(p,TPE_vec3(0,2450,-2100),TPE_vec3(12600,5000,10800)),p )
+    TPE_ENV_START(TPE_envAABoxInside(p,TPE_vec3(0,2450,-2100),TPE_vec3(12600,5000,10800)),p )
     TPE_ENV_NEXT( TPE_envAABox(p,TPE_vec3(-5693,0,-6580),TPE_vec3(4307,20000,3420)),p )
     TPE_ENV_NEXT( TPE_envAABox(p,TPE_vec3(-10000,-1000,-10000),TPE_vec3(11085,2500,9295)),p )
     TPE_ENV_NEXT( TPE_envAATriPrism(p,TPE_vec3(-5400,0,0),ramp,3000,2), p)
@@ -126,7 +126,7 @@ TPE_Vec3 environmentDistance(TPE_Vec3 p, TPE_Unit maxD)
 int jumpCountdown = 0, onGround = 0;
 TPE_Unit playerRotation = 0, groundDist;
 TPE_Vec3 ballRot, ballPreviousPos, playerDirectionVec;
-TPE_Body *playerBody = 0;
+TPE_Body *playerBody = nullptr;
 
 void updateDirection() // updates player direction vector
 {
@@ -159,7 +159,6 @@ static void _main(api::KeyboardInput& keys, api::Console& window, api::KeypressH
     groundDist = TPE_JOINT_SIZE(playerBody->joints[0]) + 30;
 
     // add two interactive bodies:
-
     helper_addBall(1000,100);
     TPE_bodyMoveBy(&tpe_world.bodies[1],TPE_vec3(-1000,1000,0));
     tpe_world.bodies[1].elasticity = 400;
@@ -277,15 +276,15 @@ static void _main(api::KeyboardInput& keys, api::Console& window, api::KeypressH
         else if (keys.get_key_active(VK_RIGHT))
             playerRotation += 5;
 
-        helper_set3DColor(120,200,200);
+        helper_set3DColor(0,0,0);
 
         helper_drawModel(&levelModel,TPE_vec3(0,0,0),TPE_vec3(600,600,600),
                          TPE_vec3(0,0,0));
 
+        helper_set3DColor(1,0,0);
+
         helper_draw3DBox(TPE_vec3(5300,elevatorHeight,-4400),
                          TPE_vec3(2000,2 * elevatorHeight,2000),TPE_vec3(0,0,0));
-
-        helper_set3DColor(70,50,0);
 
         helper_draw3DBox(TPE_bodyGetCenterOfMass(&tpe_world.bodies[2]),
                          TPE_vec3(1200,800,1200),TPE_bodyGetRotation(&tpe_world.bodies[2],0,2,1));
