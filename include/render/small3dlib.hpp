@@ -385,7 +385,7 @@ typedef
 /** Vector that consists of four scalars and can represent homogenous
   coordinates, but is generally also used as Vec3 and Vec2 for various
   purposes. */
-typedef struct
+typedef struct S3L_Vec4
 {
   S3L_Unit x;
   S3L_Unit y;
@@ -432,7 +432,7 @@ static inline int8_t S3L_triangleWinding(
   S3L_ScreenCoord x2,
   S3L_ScreenCoord y2);
 
-typedef struct
+typedef struct S3L_Transform3D
 {
   S3L_Vec4 translation;
   S3L_Vec4 rotation; /**< Euler angles. Rortation is applied in this order:
@@ -529,7 +529,7 @@ void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 m);
   then m2 (in that order). */
 void S3L_mat4Xmat4(S3L_Mat4 m1, S3L_Mat4 m2);
 
-typedef struct
+typedef struct S3L_Camera
 {
   S3L_Unit focalLength;       ///< Defines the field of view (FOV).
   S3L_Transform3D transform;
@@ -549,7 +549,7 @@ typedef struct
 
 void S3L_drawConfigInit(S3L_DrawConfig *config);
 
-typedef struct
+typedef struct S3L_Model3D
 {
   const S3L_Unit *vertices;
   S3L_Index vertexCount;
@@ -570,7 +570,7 @@ void S3L_model3DInit(
   S3L_Index triangleCount,
   S3L_Model3D *model);
 
-typedef struct
+typedef struct S3L_Scene
 {
   S3L_Model3D *models;
   S3L_Index modelCount;
@@ -582,7 +582,7 @@ void S3L_sceneInit(
   S3L_Index modelCount,
   S3L_Scene *scene);
 
-typedef struct
+typedef struct S3L_PixelInfo
 {
   S3L_ScreenCoord x;          ///< Screen X coordinate.
   S3L_ScreenCoord y;          ///< Screen Y coordinate.

@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <climits>
 #include <memory>
 #include <span>
 #include <type_traits>
@@ -78,13 +79,18 @@ namespace api {
         Coords& operator=(COORD p) NOEXCEPT;
         NODISCARD int area() CNOEXCEPT;
         Coords operator+(int i) CNOEXCEPT;
+        NODISCARD Coords operator-(Coords c) CNOEXCEPT;
         Coords& operator/=(int i) NOEXCEPT;
+        NODISCARD Coords operator/(int i) CNOEXCEPT;
         Coords& operator/=(double d) NOEXCEPT;
         Coords& operator/=(Coords c) NOEXCEPT;
         Coords& operator/=(dVec2 d) NOEXCEPT;
 
         int x, y;
     };
+
+    template <typename T>
+    inline constexpr std::size_t bitsof = sizeof(T) * CHAR_BIT;
 
     enum toggle : bool {
         off, on
@@ -127,9 +133,15 @@ namespace api {
         T& next() NOEXCEPT {
             if(_location == _size)
                 _location = 0;
-
             T& t = _data[_location];
             ++_location;
+            return t;
+        }
+
+        T& peek() NOEXCEPT {
+            if(_location == _size)
+                _location = 0;
+            T& t = _data[_location];
             return t;
         }
 

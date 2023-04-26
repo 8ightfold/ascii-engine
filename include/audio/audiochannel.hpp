@@ -20,9 +20,11 @@ namespace audio {
         void play() NOEXCEPT;
         void clear() NOEXCEPT;
         void pause() NOEXCEPT;
+        void set_volume(float f) NOEXCEPT;
 
     private:
         IAudioSource* _play_source = nullptr;
+        float volume = 1.0f;
         SourceType _type = SourceType::eSingleInstance;
         friend struct XAudioInterface;
     };

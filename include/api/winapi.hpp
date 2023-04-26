@@ -14,6 +14,7 @@
 #include <utility>
 
 #define NOMINMAX 1
+#define OEMRESOURCE
 #include <Windows.h>
 
 #define API_INVOKE_WINAPI(fn, err, ...)                                                                     \

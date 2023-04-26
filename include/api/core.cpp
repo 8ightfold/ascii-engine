@@ -42,10 +42,18 @@ namespace api {
         return { x + i, y + i };
     }
 
+    Coords Coords::operator-(Coords c) CNOEXCEPT {
+        return { x - c.x, y - c.y };
+    }
+
     Coords& Coords::operator/=(int i) NOEXCEPT {
         x /= i;
         y /= i;
         return *this;
+    }
+
+    Coords Coords::operator/(int i) CNOEXCEPT {
+        return { x / i, y / i };
     }
 
     Coords& Coords::operator/=(double d) NOEXCEPT {

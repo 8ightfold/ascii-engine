@@ -4,7 +4,7 @@
 #include <render/core.hpp>
 #include <level_model.hpp>
 
-#define FPS 240
+#define FPS 120
 #define MSPF (1000 / (FPS))
 #define DFPS (double)(FPS)
 
@@ -604,17 +604,15 @@ void helper_init()
     TPE_worldInit(&tpe_world,tpe_bodies,0,0);
 }
 
-void helper_frameStart(void)
+void helper_frameStart()
 {
     render::internal_buffer<char>->get_active_buffer()->set_buffer_data(255);
-
     S3L_newFrame();
-
     S3L_rotationToDirections(s3l_scene.camera.transform.rotation,
                              CAMERA_STEP,&helper_cameraForw,&helper_cameraRight,&helper_cameraUp);
 }
 
-void helper_frameEnd(void)
+void helper_frameEnd()
 {
     render::internal_buffer<char>->post_buffer();
     render::internal_buffer<char>->swap_buffers();

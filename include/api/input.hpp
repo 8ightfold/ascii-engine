@@ -5,8 +5,8 @@
 #include <api/console.hpp>
 
 namespace api {
-    inline constexpr unsigned short pressed  = 0x0001;
-    inline constexpr unsigned short held     = 0x8000;
+    inline constexpr unsigned short pressed  = 1;
+    inline constexpr unsigned short held     = 1 << (bitsof<SHORT> - 1);
 
     struct KeyboardInput {
         KeyboardInput() = default;

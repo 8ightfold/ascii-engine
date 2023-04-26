@@ -10,6 +10,7 @@ namespace audio {
         void start(int operation_set) override;
         void stop(int operation_set) override;
         void pause() override;
+        void set_volume(float f) override;
         NODISCARD SourceType type() CNOEXCEPT override;
 
     private:

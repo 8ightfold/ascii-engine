@@ -67,4 +67,10 @@ namespace audio {
             _play_source->pause();
         }
     }
+
+    void XAudioChannel::set_volume(float f) NOEXCEPT {
+        if(_play_source) LIKELY {
+            _play_source->set_volume(f);
+        }
+    }
 }

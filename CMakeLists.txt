@@ -14,7 +14,7 @@ add_library(project3 STATIC
         include/audio/source_types/audiosource_single.cpp include/audio/source_types/audiosource_circular.cpp
         include/audio/source_types/audiosource_looping.cpp include/audio/source_types/iaudiosource.cpp
 
-        include/ui/strided_memcpy.cpp)
+        include/ui/strided_memcpy.cpp include/api/resource_locator.cpp)
 
 target_include_directories(project3 PUBLIC include)
 target_compile_definitions(project3 PUBLIC -DCOMPILER_DEBUG=1)

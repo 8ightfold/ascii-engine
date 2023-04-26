@@ -31,6 +31,14 @@ namespace audio {
         }
     }
 
+    void AudioSourceSingle::set_volume(float f) {
+        if(_play_source) LIKELY {
+            _play_source->Stop();
+            _play_source->SetVolume(f);
+            _play_source->Start();
+        }
+    }
+
     SourceType AudioSourceSingle::type() CNOEXCEPT {
         return SourceType::eSingleInstance;
     }

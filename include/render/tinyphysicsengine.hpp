@@ -56,6 +56,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <limits>
+#include <functional>
 
 typedef
 #if TPE_USE_WIDER_TYPES
@@ -183,7 +184,7 @@ inline constexpr std::size_t TPE_INFINITY = std::numeric_limits<TPE_Unit>::max()
 
 #define TPE_PRINTF_VEC3(v) printf("[%d %d %d]",(v).x,(v).y,(v).z);
 
-typedef struct
+typedef struct TPE_Vec3
 {
   TPE_Unit x;
   TPE_Unit y;
@@ -232,7 +233,7 @@ TPE_Unit TPE_sin(TPE_Unit x);
 TPE_Unit TPE_cos(TPE_Unit x);
 TPE_Unit TPE_atan(TPE_Unit x);
 
-typedef struct
+typedef struct TPE_Joint
 {
   TPE_Vec3 position;
   TPE_UnitReduced velocity[3]; ///< not TPE_Vec3 to save size
@@ -240,7 +241,7 @@ typedef struct
                             TPE_JOINT_SIZE_MULTIPLIER */
 } TPE_Joint;
 
-typedef struct
+typedef struct TPE_Connection
 {
   uint8_t joint1;
   uint8_t joint2;
@@ -291,7 +292,7 @@ typedef void (*TPE_DebugDrawFunction)(uint16_t, uint16_t, uint8_t);
 
 /** Physics body made of spheres (each of same weight but possibly different
   radia) connected by elastic springs. */
-typedef struct
+typedef struct TPE_Body
 {
   TPE_Joint *joints;
   uint8_t jointCount;
@@ -302,9 +303,11 @@ typedef struct
   TPE_UnitReduced elasticity;      ///< elasticity of each joint
   uint8_t flags;
   uint8_t deactivateCount;
+  bool previouslyCollided;
+  std::function<void(TPE_Unit)> bodyCollisionCallback;
 } TPE_Body;
 
-typedef struct
+typedef struct TPE_World
 {
   TPE_Body *bodies;
   uint16_t bodyCount;

@@ -27,6 +27,12 @@ namespace TPE {
         eSimpleConnection   = TPE_BODY_FLAG_SIMPLE_CONN,
         eNoDeactivate       = TPE_BODY_FLAG_ALWAYS_ACTIVE,
     };
+
+    struct World {
+
+    private:
+        TPE_World _game_world;
+    };
 }
 
 namespace render {

@@ -57,16 +57,23 @@ namespace audio {
 
     void XAudioInterface::restart_source(const std::string& name) NOEXCEPT {
         if(_pipeline_sources.contains(name)) {
-            _pipeline_sources[name].pause();
-            _pipeline_sources[name].clear();
-            _pipeline_sources[name].play();
+            auto& source = _pipeline_sources[name];
+            source.pause();
+            source.clear();
+            source.play();
         }
     }
 
     void XAudioInterface::stop_source(const std::string& name) NOEXCEPT {
         if(_pipeline_sources.contains(name)) {
-            auto& source = _pipeline_sources[name];
             _pipeline_sources[name].pause();
+        }
+    }
+
+    void XAudioInterface::set_volume(const std::string& name, float volume) NOEXCEPT {
+        if(_pipeline_sources.contains(name)) {
+            auto& source = _pipeline_sources[name];
+            source.set_volume(volume);
         }
     }
 

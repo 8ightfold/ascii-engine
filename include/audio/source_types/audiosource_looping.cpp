@@ -32,6 +32,14 @@ namespace audio {
         }
     }
 
+    void AudioSourceLooping::set_volume(float f) {
+        if(_play_source) LIKELY {
+            _play_source->Stop();
+            _play_source->SetVolume(f);
+            _play_source->Start();
+        }
+    }
+
     SourceType AudioSourceLooping::type() CNOEXCEPT {
         return SourceType::eLoopingInstance;
     }

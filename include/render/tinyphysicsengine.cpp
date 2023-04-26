@@ -456,6 +456,14 @@ void TPE_worldStep(TPE_World *world)
             }
         }
 
+        if(collided && not body->previouslyCollided && body->bodyCollisionCallback) {
+            TPE_Unit verticalSpeed = body->joints->velocity[1];
+            body->bodyCollisionCallback(verticalSpeed);
+            body->previouslyCollided = true;
+        }
+        else if(not collided)
+            body->previouslyCollided = false;
+
         if (!(body->flags & TPE_BODY_FLAG_ALWAYS_ACTIVE))
         {
             if (body->deactivateCount >= TPE_DEACTIVATE_AFTER)

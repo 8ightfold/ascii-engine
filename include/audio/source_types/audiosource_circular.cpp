@@ -27,6 +27,13 @@ namespace audio {
 
     void AudioSourceCircular::pause() {}
 
+    void AudioSourceCircular::set_volume(float f) {
+        if(_bound) LIKELY {
+            auto& src = _play_sources.peek();
+            src->SetVolume(f, 0);
+        }
+    }
+
     SourceType AudioSourceCircular::type() CNOEXCEPT {
         return SourceType::eCircularInstance;
     }

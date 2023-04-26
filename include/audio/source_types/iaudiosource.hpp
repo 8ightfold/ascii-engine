@@ -17,6 +17,7 @@ namespace audio {
 
         virtual void bind(IXAudio2* interface, const std::string& name) PURE;
         virtual void pause() PURE;
+        virtual void set_volume(float f) PURE;
         NODISCARD virtual SourceType type() CNOEXCEPT PURE;
 
         void play(int operation_set = 0) {

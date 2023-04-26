@@ -21,6 +21,7 @@ namespace audio {
         void start_source(const std::string& name) NOEXCEPT;
         void restart_source(const std::string& name) NOEXCEPT;
         void stop_source(const std::string& name) NOEXCEPT;
+        void set_volume(const std::string& name, float volume) NOEXCEPT;
 
     private:
         static int& _get_count() NOEXCEPT;
