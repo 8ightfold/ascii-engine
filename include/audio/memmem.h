@@ -47,11 +47,11 @@ memmem(const void *l, size_t l_len, const void *s, size_t s_len)
 
 	/* we need something to compare */
 	if (l_len == 0 || s_len == 0)
-		return NULL;
+		return nullptr;
 
 	/* "s" must be smaller or equal to "l" */
 	if (l_len < s_len)
-		return NULL;
+		return nullptr;
 
 	/* special case where s_len == 1 */
 	if (s_len == 1)
@@ -64,7 +64,7 @@ memmem(const void *l, size_t l_len, const void *s, size_t s_len)
 		if (cur[0] == cs[0] && memcmp(cur, cs, s_len) == 0)
 			return cur;
 
-	return NULL;
+	return nullptr;
 }
 
 #endif

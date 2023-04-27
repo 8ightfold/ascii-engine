@@ -22,6 +22,8 @@ namespace audio {
         void restart_source(const std::string& name) NOEXCEPT;
         void stop_source(const std::string& name) NOEXCEPT;
         void set_volume(const std::string& name, float volume) NOEXCEPT;
+        bool fade_in(const std::string& name, float rate, float approach = 1.0f) NOEXCEPT;
+        bool fade_out(const std::string& name, float rate) NOEXCEPT;
 
     private:
         static int& _get_count() NOEXCEPT;

@@ -304,8 +304,8 @@ typedef struct TPE_Body
   uint8_t flags;
   uint8_t deactivateCount;
   bool previouslyCollided;
-  std::function<void(TPE_Unit)> bodyCollisionCallback;
-} TPE_Body;
+  std::function<void(TPE_Vec3)> bodyCollisionCallback;
+} TPE_Body, *PTPE_Body;
 
 typedef struct TPE_World
 {

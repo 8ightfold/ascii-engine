@@ -4,6 +4,10 @@
 #include <audio/core.hpp>
 #include <audio/audiosource.hpp>
 
+#define APPROX_V 0.01
+#define FLOAT_APPROX_V(f, v, granularity) (std::abs((f) - (v)) < (granularity))
+#define FLOAT_APPROX(f, v) FLOAT_APPROX_V(f, v, APPROX_V)
+
 namespace audio {
     struct XAudioChannel {
         XAudioChannel() = default;
@@ -21,11 +25,13 @@ namespace audio {
         void clear() NOEXCEPT;
         void pause() NOEXCEPT;
         void set_volume(float f) NOEXCEPT;
+        bool linear_fade(float approach, float rate = 0.01f) NOEXCEPT;
 
     private:
         IAudioSource* _play_source = nullptr;
-        float volume = 1.0f;
         SourceType _type = SourceType::eSingleInstance;
+        float volume = 1.0f;
+
         friend struct XAudioInterface;
     };
 }

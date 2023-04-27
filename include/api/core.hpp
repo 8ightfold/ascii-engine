@@ -9,6 +9,11 @@
 #include <type_traits>
 #include <utility>
 
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+
 #include <api/winapi.hpp>
 #include <config.hpp>
 
@@ -78,8 +83,9 @@ namespace api {
         Coords& operator=(POINT p) NOEXCEPT;
         Coords& operator=(COORD p) NOEXCEPT;
         NODISCARD int area() CNOEXCEPT;
-        Coords operator+(int i) CNOEXCEPT;
+        NODISCARD Coords operator+(int i) CNOEXCEPT;
         NODISCARD Coords operator-(Coords c) CNOEXCEPT;
+        NODISCARD Coords operator*(Coords c) CNOEXCEPT;
         Coords& operator/=(int i) NOEXCEPT;
         NODISCARD Coords operator/(int i) CNOEXCEPT;
         Coords& operator/=(double d) NOEXCEPT;
@@ -88,6 +94,20 @@ namespace api {
 
         int x, y;
     };
+
+
+    template <typename K, typename V, typename...EE>
+    using Map = std::unordered_map<K, V, EE...>;
+
+    template <typename K, typename...EE>
+    using Set = std::unordered_set<K, EE...>;
+
+    template <typename K, typename V, typename...EE>
+    using OrderedMap = std::map<K, V, EE...>;
+
+    template <typename K, typename...EE>
+    using OrderedSet = std::set<K, EE...>;
+
 
     template <typename T>
     inline constexpr std::size_t bitsof = sizeof(T) * CHAR_BIT;

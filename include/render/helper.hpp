@@ -10,6 +10,8 @@
 
 #define RES_X render::screen_coords.x
 #define RES_Y render::screen_coords.y
+#define TRES_X RES_X
+#define TRES_Y (RES_Y / 2)
 
 #ifndef HEIGHTMAP_3D_RESOLUTION
 #define HEIGHTMAP_3D_RESOLUTION 8
@@ -268,6 +270,7 @@ helper_jointsUsed = 0,
 helper_connectionsUsed = 0;
 
 TPE_World tpe_world;
+TPE::ECS* tpe_ecs = nullptr;
 
 int
 helper_frameStartTime,
@@ -279,15 +282,6 @@ std::size_t helper_frame;
 S3L_Scene s3l_scene;
 
 S3L_Vec4 helper_cameraForw, helper_cameraRight, helper_cameraUp;
-
-#include <chrono>
-
-unsigned long helper_getMicroSecs(void)
-{
-    namespace sttm = std::chrono;
-    auto us = sttm::duration_cast<sttm::microseconds>(sttm::system_clock::now().time_since_epoch());
-    return us.count();
-}
 
 void _helper_bodyAdded(int joints, int conns, TPE_Unit mass)
 {
@@ -371,11 +365,10 @@ void helper_addBall(TPE_Unit s, TPE_Unit mass)
     _helper_bodyAdded(1,0,mass);
 }
 
-void helper_drawLine2D(int x1, int y1, int x2, int y2, uint8_t r, uint8_t g,
-                       uint8_t b)
+void helper_drawLine2D(int x1, int y1, int x2, int y2, uint8_t c, uint8_t l = 255)
 {
     if (x1 < 0 || x2 < 0 || y1 < 0 || y2 < 0 ||
-        x1 >= RES_X || x2 >= RES_X || y1 >= RES_Y || y2 >= RES_Y)
+        x1 >= TRES_X || x2 >= TRES_X || y1 >= TRES_Y || y2 >= TRES_Y)
         return;
 
     // stupid algorithm
@@ -389,10 +382,10 @@ void helper_drawLine2D(int x1, int y1, int x2, int y2, uint8_t r, uint8_t g,
         max *= -1;
 
     for (int i = 0; i < max; ++i)
-        render::draw_pixel(x1 + (x2 * i) / max, y1 + (y2 * i) / max, r, g);
+        render::draw_pixel(x1 + (x2 * i) / max, y1 + (y2 * i) / max, c, l);
 }
 
-void helper_drawPoint3D(TPE_Vec3 p, uint8_t r, uint8_t g, uint8_t b)
+void helper_drawPoint3D(TPE_Vec3 p, uint8_t c, uint8_t l = 255)
 {
     S3L_Vec4 p2, p3;
 
@@ -403,18 +396,16 @@ void helper_drawPoint3D(TPE_Vec3 p, uint8_t r, uint8_t g, uint8_t b)
 
     S3L_project3DPointToScreen(p2,s3l_scene.camera,&p3);
 
-    if (p3.x >= 0 && p3.x < S3L_RESOLUTION_X - 1 &&
-        p3.y >= 0 && p3.y < S3L_RESOLUTION_Y - 1 && p3.z > 0)
+    if (p3.x >= 0 && p3.x < TRES_X - 1 &&
+        p3.y >= 0 && p3.y < TRES_Y && p3.z > 0)
     {
-        render::draw_pixel(p3.x, p3.y, r, g);
-        render::draw_pixel(p3.x + 1, p3.y, r, g);
-        render::draw_pixel(p3.x, p3.y + 1, r, g);
-        render::draw_pixel(p3.x + 1, p3.y + 1, r, g);
+        render::draw_pixel(p3.x, p3.y, c, l);
+        render::draw_pixel(p3.x + 1, p3.y, c, l);
     }
 }
 
-uint8_t s3l_r = 0, s3l_g = 255, s3l_b = 0;
-uint8_t s3l_rr = 0, s3l_gg = 255, s3l_bb = 0;
+uint8_t s3l_palette = 0, s3l_alpha = 255;
+uint8_t s3l_lum = 255;
 
 unsigned int s3l_previousTriangleID = 10000;
 
@@ -442,21 +433,20 @@ inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *p)
         const S3L_Index *v = _helper_drawnModel->triangles + 3 * p->triangleIndex;
         TPE_Vec3 normal = get_triangle_normal(v);
 
-        TPE_Unit intensity = 190 + TPE_vec3Dot(normal, helper_lightDir) / 8;
-        //s3l_gg = TPE_vec3Dot(normal, helper_lightDir) / luminance_scale;
-        s3l_gg = intensity;
+        //TPE_Unit intensity = 190 + TPE_vec3Dot(normal, helper_lightDir) / 8;
+        TPE_Unit intensity = 128 + (TPE_vec3Dot(normal, helper_lightDir) / 4);
+        s3l_lum = intensity;
 
         s3l_previousTriangleID = p->triangleIndex;
     }
 
-    render::draw_pixel(p->x, p->y / 2, s3l_r, s3l_gg);
+    render::draw_pixel(p->x, p->y / 2, s3l_palette, s3l_lum);
 }
 
-void helper_set3DColor(uint8_t r, uint8_t g, uint8_t b)
+void helper_set3DColor(uint8_t p, uint8_t a = 255)
 {
-    s3l_r = r;
-    s3l_g = g;
-    s3l_b = b;
+    s3l_palette = p;
+    s3l_alpha = a;
 }
 
 
@@ -601,7 +591,7 @@ void helper_init()
 
     S3L_sceneInit(0,1,&s3l_scene);
 
-    TPE_worldInit(&tpe_world,tpe_bodies,0,0);
+    TPE_worldInit(&tpe_world,tpe_bodies,0,nullptr);
 }
 
 void helper_frameStart()

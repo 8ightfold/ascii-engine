@@ -1,5 +1,7 @@
 #include "tinyphysicsengine.hpp"
 
+#define TPE_ARRAY_TO_VEC3(input) TPE_Vec3 { input[0], input[1], input[2] }
+
 static inline TPE_Unit TPE_abs(TPE_Unit x);
 static inline TPE_Unit TPE_max(TPE_Unit a, TPE_Unit b);
 static inline TPE_Unit TPE_min(TPE_Unit a, TPE_Unit b);
@@ -457,7 +459,7 @@ void TPE_worldStep(TPE_World *world)
         }
 
         if(collided && not body->previouslyCollided && body->bodyCollisionCallback) {
-            TPE_Unit verticalSpeed = body->joints->velocity[1];
+            TPE_Vec3 verticalSpeed = TPE_ARRAY_TO_VEC3(body->joints->velocity);
             body->bodyCollisionCallback(verticalSpeed);
             body->previouslyCollided = true;
         }

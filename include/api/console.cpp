@@ -44,6 +44,10 @@ namespace api {
         _console_res = _get_small_rect_resolution(csbi.srWindow);
     }
 
+    void Console::set_keystate(api::Coords pos) NOEXCEPT {
+        SetConsoleCursorPosition(_cout_handle, { (SHORT)pos.x, (SHORT)pos.y });
+    }
+
     void Console::reset_keystate() NOEXCEPT {
         SetConsoleCursorPosition(_cout_handle, { 0,0 });
     }

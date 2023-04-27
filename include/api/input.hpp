@@ -3,6 +3,7 @@
 
 #include <api/core.hpp>
 #include <api/console.hpp>
+#include <api/resource_locator.hpp>
 
 namespace api {
     inline constexpr unsigned short pressed  = 1;
@@ -40,6 +41,12 @@ namespace api {
         void set_screen_position(Coords c) CNOEXCEPT {
             SetCursorPos(c.x, c.y);
         }
+    };
+
+
+    struct CursorHider {
+        CursorHider();
+        ~CursorHider();
     };
 }
 

@@ -77,6 +77,22 @@ namespace audio {
         }
     }
 
+    bool XAudioInterface::fade_in(const std::string& name, float rate, float approach) NOEXCEPT {
+        if(_pipeline_sources.contains(name)) LIKELY {
+            auto& source = _pipeline_sources[name];
+            return source.linear_fade(approach, rate);
+        }
+        return false;
+    }
+
+    bool XAudioInterface::fade_out(const std::string& name, float rate) NOEXCEPT {
+        if(_pipeline_sources.contains(name)) LIKELY {
+            auto& source = _pipeline_sources[name];
+            return source.linear_fade(0.0f, rate);
+        }
+        return false;
+    }
+
     int& XAudioInterface::_get_count() NOEXCEPT {
         static int count = 0;
         return count;

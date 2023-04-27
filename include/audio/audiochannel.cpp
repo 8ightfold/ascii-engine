@@ -69,8 +69,29 @@ namespace audio {
     }
 
     void XAudioChannel::set_volume(float f) NOEXCEPT {
+        volume = f;
         if(_play_source) LIKELY {
-            _play_source->set_volume(f);
+            _play_source->set_volume(volume);
         }
+    }
+
+    bool XAudioChannel::linear_fade(float approach, float rate) NOEXCEPT {
+        if(not _play_source) UNLIKELY
+            return false;
+
+        if(FLOAT_APPROX(volume, approach)) {
+            volume = approach;
+            _play_source->set_volume(volume);
+            return true;
+        }
+        else if(approach > volume) {
+            volume += rate;
+        }
+        else {
+            volume -= rate;
+        }
+
+        _play_source->set_volume(volume);
+        return false;
     }
 }

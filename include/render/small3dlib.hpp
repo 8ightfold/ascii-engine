@@ -1854,7 +1854,7 @@ inline void S3L_model3DInit(
     model->vertexCount = vertexCount;
     model->triangles = triangles;
     model->triangleCount = triangleCount;
-    model->customTransformMatrix = 0;
+    model->customTransformMatrix = nullptr;
 
     S3L_transform3DInit(&(model->transform));
     S3L_drawConfigInit(&(model->config));
