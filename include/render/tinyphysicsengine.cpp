@@ -1471,7 +1471,7 @@ void TPE_worldDebugDraw(TPE_World *world, TPE_DebugDrawFunction drawFunc,
                         TPE_Unit envGridSize)
 {
 #define Z_LIMIT 250
-    if (world->environmentFunction != 0)
+    if (world->environmentFunction != nullptr)
     {
         // environment:
 

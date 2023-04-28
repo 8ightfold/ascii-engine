@@ -9,9 +9,14 @@
 #  define COMPILER_DEBUG 0
 #endif
 
-// Possible values: 8, 16, 32
 #ifndef COMPILER_UNICODE_VERSION
+/// Possible values: 8, 16, 32
 #  define COMPILER_UNICODE_VERSION 8
+#endif
+
+#ifndef COMPILER_RESCAN_COUNT
+/// Make sure you have a beefy pc for large values
+#  define COMPILER_RESCAN_COUNT 5
 #endif
 
 #include <config/undefs.hpp>
@@ -22,7 +27,7 @@
 #define COMPILER_CPP14 201402
 #define COMPILER_CPP17 201703
 #define COMPILER_CPP20 202002
-#define COMPILER_CPP23 202304           // Just a guess for now
+#define COMPILER_CPP23 202304           /// Just a guess for now
 
 #define CPPVER97_NEXT 11
 #define CPPVER98_NEXT 11
@@ -51,8 +56,14 @@
 
 #define COMPILER_FUNCTION_CLASSIC 0
 
+#define COMPILER_NUMERAL_MAX 100
+#define COMPILER_ARITHMETIC_MAX 255
+#define COMPILER_RESCAN_MAX 5
+
+#include <config/values.hpp>
 #include <config/functions.hpp>
 #include <config/compiler.hpp>
+#include <config/conditionals.hpp>
 
 #define CHAIN_HEAD() if(false) {}
 #define CHAIN_LINK(...) else if(__VA_ARGS__)

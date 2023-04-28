@@ -20,11 +20,6 @@ namespace api {
         Buffer(Coords res) : _console_res(res) { _init_buffer(); }
         Buffer(Coords res, T v) : _console_res(res) { _init_buffer(v); }
 
-        void resize_buffer(Coords new_res) NOEXCEPT {
-            this->_console_res = new_res;
-            _realloc_buffer();
-        }
-
         void set_buffer_data(const T& v) NOEXCEPT {
             std::fill(_buffer.begin(), _buffer.end(), v);
         }
@@ -71,6 +66,12 @@ namespace api {
 
 
     private:
+        void resize_buffer(Coords new_res) NOEXCEPT {
+            this->_console_res = new_res;
+            _realloc_buffer();
+        }
+
+    private:
         void _init_buffer() NOEXCEPT {
             _buffer =_buffer_t(_console_res.area(), T{});
         }
@@ -86,6 +87,9 @@ namespace api {
     private:
         _buffer_t _buffer;
         Coords _console_res;
+
+        template <typename U>
+        friend struct Framebuffer;
     };
 
 
@@ -165,9 +169,11 @@ namespace api {
         }
 
         State post_buffer() NOEXCEPT {
+            BEG_FRAME("buffer writing")
             auto buffer_data = _buffers[_selected_buffer].get_buffer_data();
-            fwrite(buffer_data.data(), sizeof(T), buffer_data.size(), stdout);
-            SetConsoleCursorPosition(_cout_handle, { 0,0 });
+            DWORD written_characters;
+            WriteConsoleOutputCharacter(_cout_handle, buffer_data.data(), buffer_data.size(), { 0,0 }, &written_characters);
+            END_FRAME("buffer writing")
 
             if(_buffer_state == State::eDoResize) UNLIKELY {
                 return _update_buffers();

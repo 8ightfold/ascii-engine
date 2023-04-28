@@ -38,7 +38,7 @@ namespace api {
         void set_all(const ConsoleOptions& opt = {}) NOEXCEPT;
         void update_buffer() NOEXCEPT;
         void set_keystate(api::Coords pos) NOEXCEPT;
-        void reset_keystate() NOEXCEPT;
+        DEPRECATED void reset_keystate() NOEXCEPT;
 
         void set_cursor_state(toggle state) NOEXCEPT;
         void set_scrollbar_state(toggle state) NOEXCEPT;

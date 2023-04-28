@@ -1,23 +1,111 @@
 #include "core.hpp"
 #include <exception>
+#include <fstream>
+
+#if ENABLE_RENDER_MESSAGES
+#  define MODEL_PRINT(...) std::printf(__VA_ARGS__);
+#else
+#  define MODEL_PRINT(...)
+#endif
 
 namespace TPE {
-    ObjectModel::ObjectModel(const fs::path& filepath) {
-        load_model(filepath);
+    ObjectModel::ObjectModel(const fs::path& filepath, WindingOrder wo) {
+        load_model(filepath, wo);
     }
 
-    void ObjectModel::load_model(const fs::path& filepath) {
+    bool ObjectModel::load_model(const fs::path& filepath, WindingOrder wo) {
+        if(_locked) return false;
 
+        auto abs_path = api::ResourceLocator::get_file(filepath);
+        std::ifstream is { abs_path };
+        debug_assert(is.is_open());
+        if(not is.is_open()) return false;
+
+        char type;
+        std::string line;
+        double x, y, z;
+        TPE_Unit v1, v2, v3;
+
+        auto skipline = [&] { std::getline(is, line); };
+
+        while(not is.eof()) {
+            if(not (is >> type)) {
+                skipline();
+                continue;
+            }
+
+            if(type == 'o') is >> _name;
+            else if(type == 'v') {
+                is >> x >> y >> z;
+                constexpr std::size_t scale_factor = TPE_FRACTIONS_PER_UNIT;
+                _vertices.push_back(TPE_Unit(x * scale_factor));
+                _vertices.push_back(TPE_Unit(y * scale_factor));
+                _vertices.push_back(TPE_Unit(z * scale_factor));
+                MODEL_PRINT("vert: %lli, %lli, %lli\n",
+                            TPE_Unit(x * scale_factor), TPE_Unit(y * scale_factor), TPE_Unit(z * scale_factor))
+            }
+            else if(type == 'f') {
+                is >> v1 >> v2 >> v3;
+                if(wo == WindingOrder::eClockwise) std::swap(v1, v3);
+                _faces.push_back(--v1);
+                _faces.push_back(--v2);
+                _faces.push_back(--v3);
+                MODEL_PRINT("face: %lli, %lli, %lli\n", v1, v2, v3)
+            }
+            else skipline();
+        }
+
+        return true;
+    }
+
+    bool ObjectModel::compile_model() NOEXCEPT {
+        if(_locked) return false;
+        if(not _check_validity()) return false;
+
+        S3L_model3DInit(_vertices.data(), vertex_count(),
+                        _faces.data(), face_count(), &_model);
+
+        _locked = true;
+        return true;
+    }
+
+    std::size_t ObjectModel::vertex_count() CNOEXCEPT {
+        debug_assert(_check_validity());
+        return _vertices.size() / 3;
+    }
+
+    std::size_t ObjectModel::face_count() CNOEXCEPT {
+        debug_assert(_check_validity());
+        return _faces.size() / 3;
+    }
+
+    bool ObjectModel::_check_validity() CNOEXCEPT {
+        bool valid_verts = (not _vertices.empty()) and (_vertices.size() % 3 == 0);
+        bool valid_faces = (not _faces.empty()) and (_faces.size() % 3 == 0);
+        return valid_verts and valid_faces;
     }
 
 
-    ECS::ECSentry::ECSentry(ECS* e, std::size_t idx) : _bound_ecs(e), _entity(idx) {
-        DEBUG_ONLY( assert(e->_skiplist[idx]); )
+    ECSentry::ECSentry(ECS* e, std::size_t idx) : _bound_ecs(e), _entity(idx) {
+        debug_assert(e->_skiplist[idx]);
     }
 
-    ECS::ECSentry::ECSentry(ECSentry&& rhs) NOEXCEPT
+    ECSentry::ECSentry(ECSentry&& rhs) NOEXCEPT
     : _bound_ecs(rhs._bound_ecs), _entity(rhs._entity) {
         rhs._bound_ecs = nullptr;
+    }
+
+    ECSentry::~ECSentry() { if(_bound_ecs) _bound_ecs->_remove_body(_entity); }
+
+    TPE_Body* ECSentry::_get_body() NOEXCEPT { return _bound_ecs->_get_body(_entity); }
+    TPE_Body* ECSentry::_get_body() CNOEXCEPT { return _bound_ecs->_get_body(_entity); }
+
+
+    ECS::ECS() NOEXCEPT {
+        TPE_worldInit(&_game_world, _bodies.data(), 0, nullptr);
+        std::size_t player_pos = add_2Line(400, 300, 400);
+        _name_map["$PLAYER"] = player_pos;
+        _names[player_pos] = "$PLAYER";
     }
 
     std::size_t ECS::get_microseconds() NOEXCEPT {
@@ -66,8 +154,48 @@ namespace TPE {
         return _add_body(1,0,mass);
     }
 
-    ECSentry ECS::bind_index(std::size_t idx) NOEXCEPT {
+    ECSentry ECS::bind(std::size_t idx) NOEXCEPT {
         return { this, idx };
+    }
+
+    ECSentry ECS::bind(std::string name) NOEXCEPT {
+        debug_assert(_name_map.contains(name));
+        std::size_t idx = _name_map[name];
+        return { this, idx };
+    }
+
+    PlayerBody ECS::get_player() NOEXCEPT {
+        return { bind(0) };
+    }
+
+    void ECS::register_env(TPE_ClosestPointFunction func) NOEXCEPT {
+        _game_world.environmentFunction = func;
+        _environment_function = func;
+    }
+
+    void ECS::tick() NOEXCEPT {
+        TPE_worldStep(&_game_world);
+
+        for(std::size_t idx = 0; idx < _assigned_indices; ++idx) {
+            if(not _skiplist[idx] or _disabled[idx]) continue;
+            TPE_Body* curr_body = &_bodies[_bodies_idx[idx]];
+
+            if(_has_gravity[idx]) TPE_bodyApplyGravity(curr_body, _gravity);
+        }
+
+        ++current_frame;
+    }
+
+    TPE_ClosestPointFunction ECS::get_env() CNOEXCEPT {
+        return _environment_function;
+    }
+
+    TPE_World& ECS::get_world() NOEXCEPT {
+        return _game_world;
+    }
+
+    const TPE_World& ECS::get_world() CNOEXCEPT {
+        return _game_world;
     }
 
     std::size_t ECS::_next_free_index() NOEXCEPT {
@@ -89,13 +217,14 @@ namespace TPE {
         _bodies_idx[idx] = _active_bodies - 1;
         _mass[idx] = mass;
         _has_gravity[idx] = (mass != 0);
+        _color[idx] = { 0, 255 };
         _index_map[_bodies_idx[idx]] = idx;
 
         return idx;
     }
 
     std::size_t ECS::_add_body(std::string name, int joints, int conns, TPE_Unit mass) NOEXCEPT {
-        DEBUG_ONLY( assert(not _name_map.contains(name)); )
+        debug_assert(not _name_map.contains(name));
         const std::size_t idx = _add_body(joints, conns, mass);
 
         if(not name.empty()) {
@@ -118,7 +247,7 @@ namespace TPE {
     }
 
     std::size_t ECS::_remove_body(std::size_t idx) NOEXCEPT {
-        DEBUG_ONLY( assert(_skiplist[idx]); )
+        debug_assert(_skiplist[idx]);
         TPE_Unit body_idx = _bodies_idx[idx];
         std::size_t swapped_idx = _body_removed(body_idx);
 
@@ -133,13 +262,14 @@ namespace TPE {
     }
 
     std::size_t ECS::_body_removed(TPE_Unit idx) NOEXCEPT {
-        DEBUG_ONLY( assert(idx < _active_bodies); )
+        debug_assert(idx < _active_bodies);
         std::swap(_bodies[idx], _bodies[_active_bodies - 1]);
         --_active_bodies;
         --_game_world.bodyCount;
         return _active_bodies;
     }
 }
+
 
 namespace render {
     void initialize_screen(api::Coords screen_size) NOEXCEPT {
@@ -154,13 +284,11 @@ namespace render {
     }
 
     void draw_pixel(int x, int y, uint8_t color, uint8_t luminance) {
-        DEBUG_ONLY(
-            if(x > screen_coords.x - 1 or y > (screen_coords.y / 2) - 1)
-                throw std::runtime_error("Invalid screen coords!"); )
+        debug_assert(not (x < 0 or y < 0 or x > TRES_X or y > TRES_Y), "Invalid screen coordinates.");
 
         uint8_t c;
         if(color == 0) {
-            long offset = (luminance / 255.0) * sizeof(world_color);
+            long offset = double(luminance / 255.0) * sizeof(world_color);
             c = world_color[offset];
         }
         else {

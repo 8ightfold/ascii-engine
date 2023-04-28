@@ -1,6 +1,10 @@
 #include "audiosource_circular.hpp"
 
 namespace audio {
+    AudioSourceCircular::~AudioSourceCircular() {
+        //_play_sources.apply([](AudioVoiceSource& src){ src.release(); });
+    }
+
     void AudioSourceCircular::bind(IXAudio2* interface, const std::string& name) {
         _name = name;
         _resource = new AudioResource(name, "wav");

@@ -50,7 +50,7 @@
   exclusive, irrevocable and unconditional license to this right. 
 */
 
-#define TPE_LOG puts
+// TODO: Make a real logger
 #define TPE_RESHAPE_ITERATIONS 5
 #define TPE_USE_WIDER_TYPES 1
 #include <cstdio>
@@ -240,6 +240,8 @@ typedef struct TPE_Joint
   uint8_t sizeDivided; /**< size (radius, ...), for saving space divided by 
                             TPE_JOINT_SIZE_MULTIPLIER */
 } TPE_Joint;
+
+typedef TPE_UnitReduced TPE_JointVelocity[3];
 
 typedef struct TPE_Connection
 {

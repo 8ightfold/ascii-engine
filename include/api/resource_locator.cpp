@@ -3,23 +3,28 @@
 namespace api {
     void ResourceLocator::initialize() NOEXCEPT {
         auto& resource_dir = _resource_dir();
+        resource_dir = get_directory("resources");
+        assertion(not resource_dir.empty(), "Resource directory could not be located.");
+    }
+
+    fs::path ResourceLocator::get_directory(const std::string& dirname) NOEXCEPT {
+        fs::path folder;
         fs::path current_dir = fs::current_path();
         const fs::path top_level = current_dir.root_path();
 
-        while(resource_dir.empty()) {
+        while(folder.empty()) {
             for(const auto& entry : fs::directory_iterator{ current_dir }) {
-                if(entry.is_directory() && entry.path().filename() == "resources") {
-                    resource_dir = entry.path();
+                if(entry.is_directory() && entry.path().filename() == dirname) {
+                    folder = entry.path();
                     break;
                 }
             }
 
-            if(current_dir == top_level) {
-                FATAL("Resource directory could not be located.");
-            }
-
+            if(current_dir == top_level) break;
             current_dir = current_dir.parent_path();
         }
+
+        return folder;
     }
 
     fs::path ResourceLocator::get_file(const fs::path& filepath) NOEXCEPT {
@@ -27,6 +32,7 @@ namespace api {
     }
 
     fs::path ResourceLocator::get_resource_dir() NOEXCEPT {
+        debug_assert(not _resource_dir().empty());
         return _resource_dir();
     }
 

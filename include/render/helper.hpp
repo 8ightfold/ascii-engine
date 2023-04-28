@@ -4,15 +4,6 @@
 #include <render/core.hpp>
 #include <level_model.hpp>
 
-#define FPS 120
-#define MSPF (1000 / (FPS))
-#define DFPS (double)(FPS)
-
-#define RES_X render::screen_coords.x
-#define RES_Y render::screen_coords.y
-#define TRES_X RES_X
-#define TRES_Y (RES_Y / 2)
-
 #ifndef HEIGHTMAP_3D_RESOLUTION
 #define HEIGHTMAP_3D_RESOLUTION 8
 #endif
@@ -26,7 +17,9 @@
 #define HEIGHTMAP_3D_POINTS (HEIGHTMAP_3D_RESOLUTION * HEIGHTMAP_3D_RESOLUTION)
 #define HEIGHTMAP_3D_TRIANGLES (((HEIGHTMAP_3D_RESOLUTION - 1) * (HEIGHTMAP_3D_RESOLUTION - 1) * 2) * 3)
 
-#define helper_lastBody tpe_world.bodies[tpe_world.bodyCount - 1]
+#ifndef DEBUG_DRAW_DIVIDE
+  #define DEBUG_DRAW_DIVIDE 1
+#endif
 
 S3L_Unit heightmapVertices[HEIGHTMAP_3D_POINTS * 3];
 S3L_Index heightmapTriangles[HEIGHTMAP_3D_TRIANGLES];
@@ -269,101 +262,15 @@ unsigned int
 helper_jointsUsed = 0,
 helper_connectionsUsed = 0;
 
-TPE_World tpe_world;
 TPE::ECS* tpe_ecs = nullptr;
 
-int
-helper_frameStartTime,
-helper_frameMsLeft,
-helper_running;
+int helper_running;
 
-std::size_t helper_frame;
+std::size_t helper_frame, helper_framev;
 
 S3L_Scene s3l_scene;
 
 S3L_Vec4 helper_cameraForw, helper_cameraRight, helper_cameraUp;
-
-void _helper_bodyAdded(int joints, int conns, TPE_Unit mass)
-{
-    TPE_bodyInit(&tpe_bodies[tpe_world.bodyCount],
-                 &tpe_joints[helper_jointsUsed],joints,
-                 &tpe_connections[helper_connectionsUsed],conns,mass);
-
-    helper_jointsUsed += joints;
-    helper_connectionsUsed += conns;
-
-    tpe_world.bodyCount++;
-}
-
-void helper_addBox(TPE_Unit w, TPE_Unit h, TPE_Unit d, TPE_Unit jointSize, TPE_Unit mass)
-{
-    TPE_makeBox(
-            tpe_joints + helper_jointsUsed,
-            tpe_connections + helper_connectionsUsed,w,h,d,jointSize);
-
-    _helper_bodyAdded(8,16,mass);
-}
-
-void helper_addCenterBox(TPE_Unit w, TPE_Unit h, TPE_Unit d, TPE_Unit jointSize, TPE_Unit mass)
-{
-    TPE_makeCenterBox(
-            tpe_joints + helper_jointsUsed,
-            tpe_connections + helper_connectionsUsed,w,h,d,jointSize);
-
-    _helper_bodyAdded(9,18,mass);
-}
-
-void helper_add2Line(TPE_Unit w, TPE_Unit jointSize, TPE_Unit mass)
-{
-    TPE_make2Line(
-            tpe_joints + helper_jointsUsed,
-            tpe_connections + helper_connectionsUsed,w,jointSize);
-
-    _helper_bodyAdded(2,1,mass);
-}
-
-void helper_addTriangle(TPE_Unit s, TPE_Unit d, TPE_Unit mass)
-{
-    TPE_makeTriangle(
-            tpe_joints + helper_jointsUsed,
-            tpe_connections + helper_connectionsUsed,s,d);
-
-    _helper_bodyAdded(3,3,mass);
-}
-
-void helper_addCenterRect(TPE_Unit w, TPE_Unit d, TPE_Unit jointSize, TPE_Unit mass)
-{
-    TPE_makeCenterRect(
-            tpe_joints + helper_jointsUsed,
-            tpe_connections + helper_connectionsUsed,w,d,jointSize);
-
-    _helper_bodyAdded(5,8,mass);
-}
-
-void helper_addCenterRectFull(TPE_Unit w, TPE_Unit d, TPE_Unit jointSize, TPE_Unit mass)
-{
-    TPE_makeCenterRectFull(
-            tpe_joints + helper_jointsUsed,
-            tpe_connections + helper_connectionsUsed,w,d,jointSize);
-
-    _helper_bodyAdded(5,10,mass);
-}
-
-void helper_addRect(TPE_Unit w, TPE_Unit d, TPE_Unit jointSize, TPE_Unit mass)
-{
-    TPE_makeRect(
-            tpe_joints + helper_jointsUsed,
-            tpe_connections + helper_connectionsUsed,w,d,jointSize);
-
-    _helper_bodyAdded(4,6,mass);
-}
-
-void helper_addBall(TPE_Unit s, TPE_Unit mass)
-{
-    tpe_joints[helper_jointsUsed] = TPE_joint(TPE_vec3(0,0,0),s);
-
-    _helper_bodyAdded(1,0,mass);
-}
 
 void helper_drawLine2D(int x1, int y1, int x2, int y2, uint8_t c, uint8_t l = 255)
 {
@@ -443,12 +350,15 @@ inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *p)
     render::draw_pixel(p->x, p->y / 2, s3l_palette, s3l_lum);
 }
 
-void helper_set3DColor(uint8_t p, uint8_t a = 255)
+void helper_set3DColor(uint8_t p, uint8_t a)
 {
     s3l_palette = p;
     s3l_alpha = a;
 }
 
+void helper_drawScene() {
+
+}
 
 void helper_drawModel(S3L_Model3D *model, TPE_Vec3 pos, TPE_Vec3 scale,
                       TPE_Vec3 rot)
@@ -553,21 +463,52 @@ void helper_draw3DSphereInside(TPE_Vec3 pos, TPE_Vec3 scale, TPE_Vec3 rot)
     helper_drawModel(&sphereModel,pos,scale,rot);
 }
 
-TPE_Vec3 helper_heightmapPointLocation(int index)
+void tpe_debugDrawPixel(uint16_t x, uint16_t y, uint8_t color)
 {
-    return TPE_vec3(
-            (-1 * HEIGHTMAP_3D_RESOLUTION * HEIGHTMAP_3D_STEP) / 2 + (index % HEIGHTMAP_3D_RESOLUTION) * HEIGHTMAP_3D_STEP + HEIGHTMAP_3D_STEP / 2,0,
-            (-1 * HEIGHTMAP_3D_RESOLUTION * HEIGHTMAP_3D_STEP) / 2 + (index / HEIGHTMAP_3D_RESOLUTION) * HEIGHTMAP_3D_STEP + HEIGHTMAP_3D_STEP / 2);
+    x /= DEBUG_DRAW_DIVIDE;
+    y /= DEBUG_DRAW_DIVIDE;
+
+    if (x < RES_X - 2 && y < RES_Y - 2)
+    {
+        uint8_t p, l;
+
+        switch (color)
+        {
+            case 0:  p = 3; l = 255; break;
+            case 1:  p = 1; l = 100; break;
+            case 2:  p = 3; l = TO_LUM(2);  break;
+            case 3:  p = 3; l = 100; break;
+            default: p = 4; l = 0;   break;
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            render::draw_pixel(x + i, (y / 2) + 0, p, l);
+            render::draw_pixel(x + i, (y / 2) + 1, p, l);
+        }
+    }
 }
 
-void helper_setHeightmapPoint(uint16_t x, uint16_t y, TPE_Unit height)
+void helper_debugDraw(int grid_depth = 45)
 {
-    x = x % HEIGHTMAP_3D_RESOLUTION;
-    y = y % HEIGHTMAP_3D_RESOLUTION;
+    TPE_Vec3 camPos =
+            TPE_vec3(
+                    s3l_scene.camera.transform.translation.x,
+                    s3l_scene.camera.transform.translation.y,
+                    s3l_scene.camera.transform.translation.z);
 
-    heightmapVertices[(y * HEIGHTMAP_3D_RESOLUTION + x) * 3 + 1] = height;
+    TPE_Vec3 camRot =
+            TPE_vec3(
+                    s3l_scene.camera.transform.rotation.x,
+                    s3l_scene.camera.transform.rotation.y,
+                    s3l_scene.camera.transform.rotation.z);
+
+    TPE_Vec3 draw_vec = TPE_vec3(
+            S3L_RESOLUTION_X * DEBUG_DRAW_DIVIDE,
+            S3L_RESOLUTION_Y * DEBUG_DRAW_DIVIDE,
+            s3l_scene.camera.focalLength);
+
+    TPE_worldDebugDraw(&tpe_ecs->get_world(), tpe_debugDrawPixel, camPos, camRot, draw_vec, grid_depth, 256);
 }
-
 
 void helper_init()
 {
@@ -575,6 +516,7 @@ void helper_init()
 
     helper_running = 1;
     helper_frame = 0;
+    helper_framev = 0;
 
     S3L_model3DInit(cubeVertices,S3L_CUBE_VERTEX_COUNT,cubeTriangles,
                     S3L_CUBE_TRIANGLE_COUNT,&cubeModel);
@@ -591,7 +533,7 @@ void helper_init()
 
     S3L_sceneInit(0,1,&s3l_scene);
 
-    TPE_worldInit(&tpe_world,tpe_bodies,0,nullptr);
+    tpe_ecs = new TPE::ECS();
 }
 
 void helper_frameStart()
@@ -607,9 +549,10 @@ void helper_frameEnd()
     render::internal_buffer<char>->post_buffer();
     render::internal_buffer<char>->swap_buffers();
     ++helper_frame;
+    ++helper_framev;
 }
 
-void helper_end(void)
+void helper_end()
 {
     // TODO
 }

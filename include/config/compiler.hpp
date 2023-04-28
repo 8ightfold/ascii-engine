@@ -73,7 +73,7 @@
 
 #include <config/cpp.hpp>
 
-#if CPPVER_MATCH(17) && defined(COMPILER_MSVC)
+#if CPPVER_MOST(17) && defined(COMPILER_MSVC)
 #  define not !
 #  define and &&
 #  define or ||
@@ -144,6 +144,7 @@
 
 #define COMPILER_FILE __FILE__
 #define COMPILER_LINE __LINE__
+#define DEBUG_INFO COMPILER_FILE, COMPILER_FUNCTION, COMPILER_LINE
 
 #if COMPILER_DEBUG == 1
 #  define DEBUG_ONLY(...) __VA_ARGS__

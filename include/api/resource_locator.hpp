@@ -9,6 +9,7 @@ namespace fs = std::filesystem;
 namespace api {
     struct ResourceLocator {
         static void initialize() NOEXCEPT;
+        static fs::path get_directory(const std::string& dirname) NOEXCEPT;
         static fs::path get_file(const fs::path& filepath) NOEXCEPT;
         static fs::path get_resource_dir() NOEXCEPT;
 

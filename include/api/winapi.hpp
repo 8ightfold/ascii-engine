@@ -17,6 +17,17 @@
 #define OEMRESOURCE
 #include <Windows.h>
 
+#if defined(TRACY_ENABLE) && COMPILER_DEBUG
+#  include <tracy/Tracy.hpp>
+#  define TAG_FRAME(name) FrameMarkNamed(name);
+#  define BEG_FRAME(name) FrameMarkStart(name);
+#  define END_FRAME(name) FrameMarkEnd(name);
+#else
+#  define TAG_FRAME(...)
+#  define BEG_FRAME(...)
+#  define END_FRAME(...)
+#endif
+
 #define API_INVOKE_WINAPI(fn, err, ...)                                                                     \
 [] <typename...internal_TT> (internal_TT&&...internal_tt) {                                                 \
     return                                                                                                  \
@@ -29,7 +40,7 @@
         auto tmp = fn(std::forward<internal_TT>(internal_tt)...);                                           \
         if(tmp == err) [[unlikely]] {                                                                       \
             std::string str { #fn };                                                                        \
-            api::throw_last_error(__FILE__, __LINE__,                                                       \
+            api::handle_last_error(__FILE__, __LINE__,                                                      \
                 reinterpret_cast<LPTSTR>(str.data()) __VA_OPT__(,) __VA_ARGS__);                            \
         }                                                                                                   \
         return tmp;                                                                                         \

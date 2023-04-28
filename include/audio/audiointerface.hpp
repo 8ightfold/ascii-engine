@@ -4,6 +4,10 @@
 #include <unordered_map>
 #include <audio/audiochannel.hpp>
 
+#define LINEAR_ALGORITHM(value, max, def, subtract) ((value) > (max)) ? (def) : ((subtract) - (float)(value) / (float)(max))
+#define LINEAR_GAIN(value, max) LINEAR_ALGORITHM(value, max, 1.0f, 0.0f)
+#define LINEAR_FALLOFF(value, max) LINEAR_ALGORITHM(value, max, 0.0f, 1.0f)
+
 namespace audio {
     struct XAudioInterface {
     private:
@@ -30,7 +34,7 @@ namespace audio {
 
     private:
         IXAudio2* _audio_interface = nullptr;
-        std::unordered_map<std::string, XAudioChannel> _pipeline_sources;
+        api::Map<std::string, XAudioChannel> _pipeline_sources;
         IXAudio2MasteringVoice* _output_device = nullptr;
     };
 }

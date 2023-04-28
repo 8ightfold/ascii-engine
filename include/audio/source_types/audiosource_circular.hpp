@@ -6,7 +6,7 @@
 namespace audio {
     struct AudioSourceCircular final : IAudioSource {
         AudioSourceCircular() : _play_sources(AUDIO_CIRCULAR_QUEUE_MAX) {}
-        ~AudioSourceCircular() override = default;
+        ~AudioSourceCircular() override;
 
         void bind(IXAudio2* interface, const std::string& name) override;
         void start(int operation_set) override;

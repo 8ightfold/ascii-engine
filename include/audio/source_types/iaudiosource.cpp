@@ -8,7 +8,7 @@ namespace audio {
     }
 
     AudioVoiceSource::~AudioVoiceSource() {
-        if(_play_source) LIKELY {
+        if(_play_source and _initialized) LIKELY {
             _play_source->Stop(0);
             _play_source->DestroyVoice();
         }
@@ -30,6 +30,16 @@ namespace audio {
             _buffer.AudioBytes = data_buf.size();
             _buffer.pAudioData = data_buf.data();
             _buffer.Flags = XAUDIO2_END_OF_STREAM;
+            _initialized = true;
+        }
+    }
+
+    void AudioVoiceSource::release() NOEXCEPT {
+        if(_play_source and _initialized) LIKELY {
+            _play_source->Stop(0);
+            _play_source->DestroyVoice();
+            _play_source = nullptr;
+            _initialized = false;
         }
     }
 
@@ -41,6 +51,7 @@ namespace audio {
     }
 
     IXAudio2SourceVoice* AudioVoiceSource::operator->() NOEXCEPT {
+        if(not _initialized) UNLIKELY return nullptr;
         return _play_source;
     }
 
@@ -49,6 +60,7 @@ namespace audio {
     }
 
     AudioVoiceSource::operator bool() CNOEXCEPT {
+        if(not _initialized) UNLIKELY return false;
         return _play_source;
     }
 }

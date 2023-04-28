@@ -1,8 +1,8 @@
 #include "core.hpp"
 
 #include <algorithm>
+#include <thread>
 #include <locale>
-
 #include <strsafe.h>
 
 namespace api {
@@ -42,12 +42,28 @@ namespace api {
         return { x + i, y + i };
     }
 
+    Coords Coords::operator+(Coords c) CNOEXCEPT {
+        return { x + c.x, y + c.y };
+    }
+
     Coords Coords::operator-(Coords c) CNOEXCEPT {
         return { x - c.x, y - c.y };
     }
 
     Coords Coords::operator*(Coords c) CNOEXCEPT {
         return { x * c.x, y * c.y };
+    }
+
+    Coords& Coords::operator+=(Coords c) NOEXCEPT {
+        x += c.x;
+        y += c.y;
+        return *this;
+    }
+
+    Coords& Coords::operator-=(Coords c) NOEXCEPT {
+        x -= c.x;
+        y -= c.y;
+        return *this;
     }
 
     Coords& Coords::operator/=(int i) NOEXCEPT {
@@ -78,6 +94,19 @@ namespace api {
         return *this;
     }
 
+
+    void assertion_impl(const char* filename, const char* func, int line, bool condition, const std::string& err) {
+        if(not condition) fatal_error(filename, func, line, err);
+    }
+
+    NORETURN void waiting_exit(int code) {
+        std::cout << "Press [esc/return] to continue..." << std::endl;
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(500ms);
+        while(not (WIN_PRESSED(VK_ESCAPE) or WIN_PRESSED(VK_RETURN))) {}
+        std::exit(code);
+    }
+
     static std::string parse_pretty_func(std::string str) NOEXCEPT /* NOLINT */ {
     #if COMPILER_FUNCTION_CLASSIC == 0
         std::size_t location = str.rfind(')');
@@ -91,16 +120,14 @@ namespace api {
 
     NORETURN void fatal_error(const char* filename, const char* func, int line, const std::string& err) {
         DEBUG_ONLY(
-                std::cerr << filename << ":" << line << '\n';
-                std::cerr << "In '" << parse_pretty_func(func) << "'\n";
+                std::cout << filename << ":" << line << '\n';
+                std::cout << "In '" << parse_pretty_func(func) << "'\n";
         )
-        std::cerr << "FATAL: " << err << '\n';
-        std::cerr << "Press [esc/return] to continue..." << std::endl;
-        while(not (WIN_PRESSED(VK_ESCAPE) or WIN_PRESSED(VK_RETURN))) {}
-        std::exit(-1);
+        std::cout << "FATAL: " << err << '\n';
+        waiting_exit(-1);
     }
 
-    void throw_last_error(const char* filename, int line, LPTSTR lpszFunction, bool exit_on_error) {
+    void handle_last_error(const char* filename, int line, LPTSTR lpszFunction, bool exit_on_error) {
         LPVOID lpMsgBuf;
         LPTSTR lpOutBuf;
         DWORD err_code = GetLastError();
@@ -124,8 +151,6 @@ namespace api {
         LocalFree(lpOutBuf);
         DEBUG_ONLY( std::cout << filename << ":" << line << '\n'; )
         std::cout << throw_buf << std::endl;
-        if(exit_on_error) std::cout << "Press [esc] to continue...";
-        while(not (GetAsyncKeyState(VK_ESCAPE) & 0x1)) {}
-        if(exit_on_error) std::exit(-2);
+        if(exit_on_error) waiting_exit(-2);
     }
 }

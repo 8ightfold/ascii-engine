@@ -14,15 +14,15 @@ set audio_src=audio/core.cpp audio/audiochannel.cpp audio/audiointerface.cpp aud
 set render_src=render/core.cpp render/tinyphysicsengine.cpp
 set ui_src=ui/strided_memcpy.cpp
 
-set compile_opts= -std=c++20 -O3 -DCOMPILER_DEBUG=0 -I.
+set compile_opts= -std=c++20 -O3 -ffast-math -DCOMPILER_DEBUG=0 -I.
 set link_opts= -Iinclude -lgdi32 -lkernel32 -lole32 -lxaudio2_8
 
-if exist %app_name% (
-    echo Already compiled!
-) else (
-    echo Compiling...
-    :: Main compile command
-    g++ %compile_opts% resources.o -o %app_name% ../driver.cpp %api_src% %audio_src% %render_src% %ui_src% %link_opts%
-)
+echo Compiling...
+echo Current command:
+:: Main compile command
+set cmp_cmd=g++ %compile_opts% resources.o -o %app_name% ../driver.cpp %api_src% %audio_src% %render_src% %ui_src% %link_opts%
+echo %cmp_cmd%
+%cmp_cmd%
+
 :: Wait
 PAUSE

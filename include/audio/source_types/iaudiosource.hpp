@@ -51,6 +51,7 @@ namespace audio {
         ~AudioVoiceSource();
 
         void bind(IXAudio2* interface, AudioResource* resource) NOEXCEPT;
+        void release() NOEXCEPT;
         void submit_buffer() NOEXCEPT;
         IXAudio2SourceVoice* operator->() NOEXCEPT;
         XAUDIO2_BUFFER& get_buffer() NOEXCEPT;
@@ -59,6 +60,7 @@ namespace audio {
     private:
         IXAudio2SourceVoice* _play_source = nullptr;
         XAUDIO2_BUFFER _buffer = {};
+        bool _initialized = false;
     };
 }
 
