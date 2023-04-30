@@ -4,26 +4,31 @@
 #include <api/timer.hpp>
 #include <api/resource_locator.hpp>
 
-#include <ui/strided_memcpy.hpp>
 #include <ui/ui_types.hpp>
 #include <render/helper.hpp>
 #include <audio/audiointerface.hpp>
 
-#include <cstdio>
-#include <cstdarg>
+#include <engine/game.hpp>
+
+#define ARGUMENTS \
+    api::Input& input, \
+    api::KeypressHandlerFactory& khf, \
+    api::Timer& time, api::Timer& seconds, double& elapsed_time, \
+    api::DefaultFramebuffer& framebuffer, \
+    api::Console& window,             \
+    audio::XAudioInterface& audio_interface, std::string& current_song
+
 
 inline constexpr double framerate_ms = 1000.0 / DFPS;
 
-static void print_chars();
-static int esprintf(char* string, const char* format, ...);
-static void render_init(api::Framebuffer<modeASCII>& fb, api::Coords bc);
+static void render_init(api::Framebuffer<ModeASCII>& fb, api::Coords bc);
 void audio_init(audio::XAudioInterface& ai);
 bool valid_distance(TPE_Vec3 v);
-void buf_print(char* rawbuf, TPE_Vec3 v);
-void buf_print(char* rawbuf, const char* str, TPE_Vec3 v);
+void buf_print(api::DefaultFramebuffer& buffer, TPE_Vec3 v);
+void buf_print(api::DefaultFramebuffer& buffer, const char* str, TPE_Vec3 v);
 
-int test_engine();
-int test_ui();
+int test_engine(ARGUMENTS);
+int test_ui(ARGUMENTS);
 
 TPE_Unit elevatorHeight;
 TPE_Unit ramp[6] = { 1600,0, -500,1400, -700,0 };
@@ -60,45 +65,57 @@ int main() {
         if(WIN_PRESSED(VK_ESCAPE)) return 0;
     }
 
-    //return test_engine();
-    return test_ui();
-}
-
-int test_engine() {
     api::Console::initialize();
     api::ResourceLocator::initialize();
     audio::XAudioInterface::initialize();
 
+    api::Input input;
+    api::KeypressHandlerFactory khf(input);
+    api::Timer time, seconds;
+    double elapsed_time;
+
+    api::Console window({
+        .fullscreen = api::on,
+        .console_title = "Physics Engine"
+    });
+
+    api::DefaultFramebuffer framebuffer;
+    api::Coords bufcoords = window.get_buffer_coords();
+    render_init(framebuffer, bufcoords);
+
+    auto audio_interface = audio::XAudioInterface::create();
+    audio_init(audio_interface);
+    api::on_error = [&] {
+        enable_ansi();
+        std::cout << "\x1b[0;30;41m";
+        window.set_keystate({ 0,0 });
+        std::cout << std::string(framebuffer->area(), ' ');
+        window.set_keystate({ 0,0 });
+        audio_interface.stop_all();
+        audio_interface.set_volume("error", 2.0);
+        audio_interface.start_source("error");
+    };
+    std::string current_song = "menusong";
+
+    int return_code = test_ui(input, khf, time, seconds, elapsed_time, framebuffer, window, audio_interface, current_song);
+    if(return_code == 1) {
+        test_engine(input, khf, time, seconds, elapsed_time, framebuffer, window, audio_interface, current_song);
+    }
+}
+
+int test_engine(ARGUMENTS) {
     TPE::ObjectModel model("models/level_test.obj", TPE::WindingOrder::eCCW);
     model.compile_model();
     model.set_color(0);
 
-    api::Input input;
-    api::Timer time, seconds;
-
-    api::KeypressHandlerFactory khf(input);
     const api::KeypressHandler ESCAPE = khf(VK_ESCAPE, api::eSingle);
     const api::KeypressHandler DRAW_FPS = khf('F', api::eSingle);
     const api::KeypressHandler SPRINTING = khf('R', api::eContinuous);
     const api::KeypressHandler FREECAM = khf(VK_TAB, api::eSingle);
     const api::KeypressHandler DEBUG = khf('I', api::eSingle);
 
-    api::Console window({
-        .fullscreen = api::on,
-        .font_size = { 16,16 },
-        .console_title = "Morpheus, Dorpheus, Orpheus, Go eat some walruses"
-    });
-
-    api::Framebuffer<modeASCII> framebuffer;
-    api::Coords bufcoords = window.get_buffer_coords();
-    render_init(framebuffer, bufcoords);
-    framebuffer.swap_buffers();
-
-    auto audio_interface = audio::XAudioInterface::create();
-    audio_init(audio_interface);
-    std::string music_track = "intersong";
-
-    auto screen_coords = (api::dVec2)(window.get_screen_coords() + 1) / (api::dVec2)framebuffer.get_coords();
+    auto bufcoords = window.get_buffer_coords();
+    auto screen_coords = framebuffer.get_screen_coords(window.get_screen_coords());
     auto screen_middle = (window.get_screen_coords() / 2);
     auto buffer_middle = bufcoords / 2;
 
@@ -123,8 +140,7 @@ int test_engine() {
 
     // add two interactive bodies:
     TPE_Unit ball_audio_cooldown = 0;
-    auto ball_body = tpe_ecs->bind(
-            tpe_ecs->add_ball(1000, TPE::immovable));
+    auto ball_body = tpe_ecs->bind(tpe_ecs->add_ball(1000, 100));
     ball_body.move_by(-1000, 1000, 0);
     ball_body->elasticity = 400;
     ball_body->friction = 100;
@@ -172,29 +188,29 @@ int test_engine() {
     TPE_Unit gravity_value = 5;
 
     auto dur = api::ms_duration(framerate_ms);
-    double elapsed_time = framerate_ms;
+    elapsed_time = framerate_ms;
     double average_fps = DFPS;
     bool disp_fps = false;
-    bool freecam = true;
+    bool freecam = false;
     bool debug_draw = false;
-    float music_volume = 0.05f;
+    float music_volume = 1.0f;
 
     auto tick_position = [&] {
         if (onGround) {
             if(input.get_key_held(VK_SPACE) && jumpCountdown == 0) {
-                player_body.foot_velocity()[1] = 120;
+                player_body.foot_velocity()[1] = 140;
                 jumpCountdown = 8;
             }
         }
 
-        static TPE_Unit D = 15, max_v = 60;
+        static TPE_Unit D = 17, max_v = 80;
         auto& player_velocity = player_body.foot_velocity();
 
         if(SPRINTING()) {
-            D = 10, max_v = 110;
+            D = 12, max_v = 100;
         }
         else {
-            D = 15, max_v = 90;
+            D = 17, max_v = 80;
         }
 
         if(input.get_key_held('W')) {
@@ -262,28 +278,27 @@ int test_engine() {
         }
 
         // Draw functions
-        TPE_Unit scale = 1200;
-        TPE::draw_model(model, {0,0,0}, {scale,scale,scale}, {0,0,0});
+        //TPE_Unit scale = 1200;
+        //TPE::draw_model(model, {0,0,0}, {scale,scale,scale}, {0,0,0});
 
         helper_set3DColor(0); {
-        //TPE_Unit scale = 600;
-        //helper_drawModel(&levelModel, TPE_vec3(0,0,0), TPE_vec3(scale,scale,scale), TPE_vec3(0,0,0));
-    }
+            TPE_Unit scale = 600;
+            helper_drawModel(&levelModel, TPE_vec3(0,0,0), TPE_vec3(scale,scale,scale), TPE_vec3(0,0,0));
+        }
 
         // White color
-        /*
-        helper_set3DColor(1); {
-            helper_draw3DBox(TPE_vec3(5300,elevatorHeight,-4400),
-                             TPE_vec3(2000,2 * elevatorHeight,2000),TPE_vec3(0,0,0));
+        helper_set3DColor(1);
+        {
+            helper_draw3DBox(TPE_vec3(5300, elevatorHeight, -4400),
+                             TPE_vec3(2000, 2 * elevatorHeight, 2000), TPE_vec3(0, 0, 0));
 
             helper_draw3DBox(box_body.get_center_of_mass(),
-                             TPE_vec3(1200,800,1200),
+                             TPE_vec3(1200, 800, 1200),
                              box_body.get_rotation(0, 2, 1));
 
             helper_draw3DSphere(ball_body->joints[0].position,
-                                TPE_vec3(1000,1000,1000),ballRot);
+                                TPE_vec3(1000, 1000, 1000), ballRot);
         }
-         */
     };
 
     auto poll_volume = [&] {
@@ -292,14 +307,14 @@ int test_engine() {
         if(input.get_key_held('K')) {
             if(music_volume > min_volume) {
                 music_volume -= 0.02f;
-                audio_interface.set_volume(music_track, music_volume);
+                audio_interface.set_volume(current_song, music_volume);
             }
             else music_volume = min_volume;
         }
         else if(input.get_key_held('L')) {
             if(music_volume < max_volume) {
                 music_volume += 0.02f;
-                audio_interface.set_volume(music_track, music_volume);
+                audio_interface.set_volume(current_song, music_volume);
             }
             else music_volume = max_volume;
         }
@@ -317,32 +332,18 @@ int test_engine() {
 
         if(DRAW_FPS()) disp_fps = !disp_fps;
         if(disp_fps) {
-            auto* rawbuf = framebuffer.get_active_buffer()->raw_data();
-            esprintf(rawbuf, "FPS: %.1f, Music volume: %i%%    ", average_fps, (int)(music_volume * 100));
-            rawbuf += framebuffer->get_x();
-            esprintf(rawbuf, "NOW PLAYING: %s   ", music_track.c_str());
-            rawbuf += framebuffer->get_x();
-            auto pos = player_body->joints[0].position;
-            buf_print(rawbuf, "POS", pos);
-            rawbuf += framebuffer->get_x();
-            esprintf(rawbuf, "X: %.2f, Y: %.1f, Z: %.2f      ",
-                     (double)pos.x / TPE_F, (double)pos.y / TPE_F, (double)pos.z / TPE_F);
-
+            framebuffer.write_line("FPS: %.1f, Music volume: %i%%    ", average_fps, (int)(music_volume * 100));
+            framebuffer.write_line("NOW PLAYING: %s   ", current_song.c_str());
+            buf_print(framebuffer, "POS", player_body.foot_position());
 
             auto look_vec = TPE_vec3(playerDirectionVec.x, headAngle, playerDirectionVec.z);
             TPE_Vec3 env_dist = TPE_castEnvironmentRay(
-                    player_body->joints[1].position, look_vec,
+                    player_body.head_position(), look_vec,
                     tpe_ecs->get_env(), 128, 512, 128);
 
-            rawbuf += framebuffer->get_x();
-            if(valid_distance(env_dist)) {
-                buf_print(rawbuf, "LOOKING AT", env_dist);
-                //helper_drawPoint3D(env_dist, 1);
-            }
-            else esprintf(rawbuf, "LOOKING AT: NULL   ");
-
-            rawbuf += framebuffer->get_x();
-            esprintf(rawbuf, "GRAVITY: %i   ", gravity_value);
+            if(valid_distance(env_dist))
+                buf_print(framebuffer, "LOOKING AT", env_dist);
+            else framebuffer.write_line("LOOKING AT: NULL   ");
         }
     };
     auto poll_cursor = [&] {
@@ -353,19 +354,18 @@ int test_engine() {
         input.set_screen_position(screen_middle);
     };
     auto poll_sleep = [&] {
-        time.stop();
         elapsed_time = framerate_ms - time.elapsed_ms();
-        if(elapsed_time > 0.0) {
-            dur = api::ms_duration(elapsed_time);
-            std::this_thread::sleep_for(dur);
+        while(elapsed_time > 0.0) {
+            elapsed_time = framerate_ms - time.elapsed_ms();
         }
         time.restart();
     };
 
     if(freecam) player_body->flags ^= TPE_BODY_FLAG_DISABLED;
 
-    audio_interface.set_volume(music_track, music_volume);
-    audio_interface.start_source(music_track);
+    current_song = "intersong";
+    audio_interface.set_volume(current_song, music_volume);
+    audio_interface.start_source(current_song);
     time.start(), seconds.start();
     while(helper_running) {
         TAG_FRAME("main loop")
@@ -447,7 +447,7 @@ int test_engine() {
     std::printf("Bye bye!");
 
     const float fade_rate = music_volume * 0.015;
-    while(not audio_interface.fade_out(music_track, fade_rate) and not ESCAPE()) {
+    while(not audio_interface.fade_out(current_song, fade_rate) and not ESCAPE()) {
         poll_sleep();
     }
 
@@ -459,47 +459,20 @@ int test_engine() {
 
 
 struct Parent {
-    Parent() { _ui = new ui::UIFrame<Parent>(this); }
-    ~Parent() { delete _ui; }
-    ui::UIFrame<Parent>* operator->() { return _ui; }
-
+    ui::UIFrameManager<Parent>* operator->() { return &_ui; }
+    bool tick() { return _ui(); }
 private:
-    ui::UIFrame<Parent>* _ui {};
+    ui::UIFrameManager<Parent> _ui {};
 };
 
-int test_ui() {
-    api::Console::initialize();
-    api::ResourceLocator::initialize();
-    audio::XAudioInterface::initialize();
-
-    TPE::ObjectModel model("models/level_test.obj", TPE::WindingOrder::eCCW);
-    model.compile_model();
-    model.set_color(0);
-
-    api::Input input;
-    api::Timer time, seconds;
-    double elapsed_time;
-    api::ms_duration dur;
-
-    api::KeypressHandlerFactory khf(input);
+int test_ui(ARGUMENTS) {
     const api::KeypressHandler ESCAPE = khf(VK_ESCAPE, api::eSingle);
-    const api::KeypressHandler DEBUG = khf('R', api::eSingle);
+    const api::KeypressHandler DEBUG = khf('F', api::eSingle);
 
-    api::Console window({
-        .fullscreen = api::on,
-        .font_size = { 16,16 },
-        .console_title = "Physics Engine"
-    });
-
-    api::Framebuffer<modeASCII> framebuffer;
-    api::Coords bufcoords = window.get_buffer_coords();
-    render_init(framebuffer, bufcoords);
-
-    auto audio_interface = audio::XAudioInterface::create();
-    audio_init(audio_interface);
-    std::string music_track = "menusong";
-    double average_fps = DFPS;
+    auto average_fps = DFPS;
     std::uint32_t frame = 0;
+    bool do_escape = false;
+    bool begin_game = false;
 
     auto poll_sleep = [&] {
         elapsed_time = framerate_ms - time.elapsed_ms();
@@ -524,86 +497,112 @@ int test_ui() {
         framebuffer->set_buffer_data(255);
     };
 
-    Parent p;
+    wipe_screen();
+    framebuffer.post_buffer();
+
+    Parent parent;
+    auto* p = parent->add_frame("main");
     p->bind(input);
     p->bind(window);
     p->bind(framebuffer);
+    p->callback([&] {
+        if(ESCAPE()) { do_escape = true; }
+    });
 
     using ui_type = ui::UIType<Parent>;
-    auto& body = p->add_element<ui_type::Element>("body");
-    body.align(ui::eCenterX, ui::eCenterY);
-    body.set_size(80, 20);
+    auto* body = p->add_element<ui_type::Body>("body");
+    body->align(ui::eCenter);
+    body->set_size(.35, .6);
+    body->set_color({ .luminance = 176 });
 
-    auto& button = p->add_element<ui_type::Element>("button");
-    button.align(ui::eCenterX, ui::eCenterY);
-    button.set_size(40, 20);
-    button.set_color(178);
+    {
+        auto* start = body->add_element<ui_type::Button>("start");
+        start->align(ui::eCenterY, ui::eTextLeft, ui::eTextSuspend);
+        start->set_size(.2, .1);
+        start->set_position(.0, 0.4);
+        start->set_scale(1);
+        start->set_color({ .luminance = 177 });
+        start->on_click([&](ui_type::Button* elem) {
+            audio_interface.start_source("click");
+            begin_game = true;
+            do_escape = true;
+        });
+        start->set_text("START GAME");
 
-    wipe_screen();
-    framebuffer.post_buffer();
-    p->compile();
+        auto* options = body->add_element<ui_type::Button>("options");
+        options->align(ui::eCenterY, ui::eTextCenter, ui::eTextSuspend);
+        options->set_size(.2, .1);
+        options->set_position(.0, 0.1);
+        options->set_scale(1);
+        options->set_color({ .luminance = 177 });
+        options->on_click([&](ui_type::Button* elem) {
+            audio_interface.start_source("click");
+            elem->push("options");
+        });
+        options->set_text("OPTIONS");
 
-    api::Coords buffer_pos = body.position();
-    buffer_pos = api::Coords{ -1, 20 };
-    body.modify_coords(buffer_pos);
-    bool print_data = false;
+        auto* exit = body->add_element<ui_type::Button>("  exit  ");
+        exit->align(ui::eCenterY, ui::eTextRight, ui::eTextSuspend);
+        exit->set_size(.2, .1);
+        exit->set_position(.0, -0.2);
+        exit->set_scale(1);
+        exit->set_color({ .luminance = 177 });
+        exit->on_click([](ui_type::Button* elem) {
+            elem->pop();
+        });
+        exit->set_text("EXIT");
+    }
 
-    audio_interface.set_volume("junglesong", 0.2);
-    audio_interface.start_source("junglesong");
+    auto* o = parent->add_frame("options");
+    o->bind(input);
+    o->bind(window);
+    o->bind(framebuffer);
+    o->callback([&] {
+        if(ESCAPE()) {
+            audio_interface.start_source("click");
+            parent->pop();
+        }
+    });
+
+    auto* opts = o->add_element<ui_type::Body>("body");
+    opts->align(ui::eCenter);
+    opts->set_size(.35, .6);
+    opts->set_color({ .luminance = 176 });
+
+    parent->bind(&parent, "main");
+    audio_interface.start_source(current_song);
+
+    o->element("dadsasdsad");
     time.start(), seconds.start();
-    while(not ESCAPE()) {
-        TAG_FRAME("main loop")
-        bool modified = false;
-
-        if(input.get_key_held('W')) {
-            --buffer_pos.y;
-            modified = true;
-        }
-        if(input.get_key_held('S')) {
-            ++buffer_pos.y;
-            modified = true;
-        }
-        if(input.get_key_held('D')) {
-            buffer_pos.x += 2;
-            modified = true;
-        }
-        if(input.get_key_held('A')){
-            buffer_pos.x -= 2 ;
-            modified = true;
-        }
-
-        if(modified) {
-            body.modify_coords(buffer_pos);
-            body.compile();
-        }
-
-        auto [cx, cy] = body.position();
-        if(DEBUG()) print_data = !print_data;
-
-        BEG_FRAME("rendering")
-        wipe_screen();
-        p->render();
-
-        if(print_data) {
-            auto* rawbuf = framebuffer.get_raw_buffer_data();
-            esprintf(rawbuf, "FPS: %.1f    ", average_fps);
-            rawbuf += framebuffer->get_x();
-            esprintf(rawbuf, "POS: { X: %i, Y: %i }   ", cx, cy);
-        }
-
+    while(not do_escape) {
+        TAG_FRAME("menu loop")
+        if(not parent.tick()) break;
         framebuffer.post_buffer();
-        END_FRAME("rendering")
 
         poll_fps();
-        BEG_FRAME("sleeping")
         poll_sleep();
-        ++frame;
-        END_FRAME("sleeping")
+        wipe_screen();
     }
+
+    if(begin_game) {
+        float music_volume = 1.0;
+        const float fade_rate = music_volume * 0.015;
+        while(not audio_interface.fade_out(current_song, fade_rate) and not ESCAPE()) {
+            poll_sleep();
+        }
+
+        const double exit_time = (music_volume > 0.1) ? 0.5 : (1.5 - music_volume);
+        const auto exit_dur = api::ms_duration(exit_time * 400.0);
+        std::this_thread::sleep_for(exit_dur);
+        return 1;
+    }
+
+    framebuffer.get_active_buffer()->set_buffer_data(-1);
+    framebuffer.post_buffer();
     return 0;
 }
 
-static void render_init(api::Framebuffer<modeASCII>& fb, api::Coords bc) {
+static void render_init(api::Framebuffer<ModeASCII>& fb, api::Coords bc) {
     fb.set_details(bc, 3);
     fb.initialize_buffers();
     render::initialize_buffer(fb);
@@ -611,69 +610,34 @@ static void render_init(api::Framebuffer<modeASCII>& fb, api::Coords bc) {
 }
 
 void audio_init(audio::XAudioInterface& ai) {
+    ai.register_source("click", audio::eCircularInstance);
+    ai.register_source("error", audio::eCircularInstance);
     ai.register_source("thud", audio::eCircularInstance);
     ai.register_source("box", audio::eCircularInstance);
+
     ai.register_source("golfcup", audio::eSingleInstance);
     ai.register_source("trophyget", audio::eSingleInstance);
+    ai.register_source("dooropen", audio::eSingleInstance);
+    ai.register_source("doorclose", audio::eSingleInstance);
 
     ai.register_source("bosssong", audio::eLoopingInstance);
     ai.register_source("cavesong", audio::eLoopingInstance);
+    ai.register_source("deathsong", audio::eLoopingInstance);
     ai.register_source("intersong", audio::eLoopingInstance);
     ai.register_source("junglesong", audio::eLoopingInstance);
     ai.register_source("mainsong", audio::eLoopingInstance);
     ai.register_source("menusong", audio::eLoopingInstance);
-}
-
-static void print_chars() {
-    for(unsigned short c = 0; c < 256; ++c) {
-        switch(c) {
-            case '\a': {
-                std::printf("%i: '\\a'\n", c);
-                break;
-            }
-            case '\b': {
-                std::printf("%i: '\\b'\n", c);
-                break;
-            }
-            case '\n': {
-                std::printf("%i: '\\n'\n", c);
-                break;
-            }
-            case '\r': {
-                std::printf("%i: '\\r'\n", c);
-                break;
-            }
-            case '\t': {
-                std::printf("%i: '\\t'\n", c);
-                break;
-            }
-            default: {
-                std::printf("%i: '%c'\n", c, c);
-            }
-        }
-    }
-    std::cout << std::endl;
-}
-
-static int esprintf(char* string, const char* format, ...) {
-    va_list ls;
-    int ret;
-
-    va_start(ls, format);
-    ret = vsprintf(string, format, ls);
-    va_end(ls);
-
-    return ret;
+    ai.register_source("naturesong", audio::eLoopingInstance);
 }
 
 bool valid_distance(TPE_Vec3 v) {
     return not (v.x == TPE_INFINITY or v.y == TPE_INFINITY or v.z == TPE_INFINITY);
 }
 
-void buf_print(char* rawbuf, TPE_Vec3 v) {
-    esprintf(rawbuf, "X: %i, Y: %i, Z: %i      ", v.x, v.y, v.z);
+void buf_print(api::DefaultFramebuffer& buffer, TPE_Vec3 v) {
+    buffer.write_line("X: %i, Y: %i, Z: %i      ", v.x, v.y, v.z);
 }
 
-void buf_print(char* rawbuf, const char* str, TPE_Vec3 v) {
-    esprintf(rawbuf, "%s: { X: %i, Y: %i, Z: %i }      ", str, v.x, v.y, v.z);
+void buf_print(api::DefaultFramebuffer& buffer, const char* str, TPE_Vec3 v) {
+    buffer.write_line("%s: { X: %i, Y: %i, Z: %i }      ", str, v.x, v.y, v.z);
 }

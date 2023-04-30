@@ -29,7 +29,7 @@ namespace api {
     CursorHider::CursorHider() {
         MAYBE_UNUSED const static int return_code = _register_restore();
         auto filepath = ResourceLocator::get_file("cursors/hidden.cur");
-        HANDLE noCursorHandle = LoadCursorFromFileW(filepath.c_str());
+        HANDLE noCursorHandle = LoadCursorFromFile(filepath.c_str());
         HCURSOR noCursor = CopyCursor(noCursorHandle);
         SetSystemCursor(noCursor, OCR_NORMAL);
     }
@@ -46,7 +46,7 @@ namespace api {
 
     void CursorHider::_restore_cursor() {
         auto filepath = ResourceLocator::get_file("cursors/dark.cur");
-        HANDLE darkCursorHandle = LoadCursorFromFileW(filepath.c_str());
+        HANDLE darkCursorHandle = LoadCursorFromFile(filepath.c_str());
         HCURSOR darkCursor = CopyCursor(darkCursorHandle);
         SetSystemCursor(darkCursor, OCR_NORMAL);
     }

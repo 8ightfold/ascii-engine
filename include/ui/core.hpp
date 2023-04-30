@@ -1,6 +1,8 @@
 #ifndef PROJECT3_TEST_UI_CORE_HPP
 #define PROJECT3_TEST_UI_CORE_HPP
 
+#include <deque>
+#include <functional>
 #include <api/core.hpp>
 #include <api/framebuffer.hpp>
 #include <ui/strided_memcpy.hpp>
@@ -11,7 +13,9 @@ namespace ui {
         void set_size(int x, int y);
         void set_position(api::Coords c);
         void set_size(api::Coords c);
+        void shrink(int s);
         void zero_orient();
+        NODISCARD bool intersects(api::Coords c) CNOEXCEPT;
         NODISCARD api::Coords size() CNOEXCEPT;
         NODISCARD int area() CNOEXCEPT;
 
@@ -41,6 +45,9 @@ namespace ui {
         if(not src_size.area()) return;
         strided_memcpy(dst, src, dst_size, dst_offset, src_size, size);
     }
+
+    std::size_t text_occurrences(const std::string& str, char delim);
+    std::deque<std::string> split_string(const std::string& str, char delim);
 }
 
 #endif //PROJECT3_TEST_UI_CORE_HPP

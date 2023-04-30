@@ -34,12 +34,28 @@ namespace api {
         return *this;
     }
 
+    Coords& Coords::operator=(iVec2 p) NOEXCEPT {
+        x = p.x;
+        y = p.y;
+        return *this;
+    }
+
+    Coords& Coords::operator=(dVec2 p) NOEXCEPT {
+        x = int(p.x);
+        y = int(p.y);
+        return *this;
+    }
+
     int Coords::area() CNOEXCEPT {
         return (x * y);
     }
 
     Coords Coords::operator+(int i) CNOEXCEPT {
         return { x + i, y + i };
+    }
+
+    Coords Coords::operator-(int i) CNOEXCEPT {
+        return { x - i, y - i };
     }
 
     Coords Coords::operator+(Coords c) CNOEXCEPT {
@@ -119,6 +135,7 @@ namespace api {
     }
 
     NORETURN void fatal_error(const char* filename, const char* func, int line, const std::string& err) {
+        if(on_error) on_error();
         DEBUG_ONLY(
                 std::cout << filename << ":" << line << '\n';
                 std::cout << "In '" << parse_pretty_func(func) << "'\n";
@@ -127,28 +144,43 @@ namespace api {
         waiting_exit(-1);
     }
 
-    void handle_last_error(const char* filename, int line, LPTSTR lpszFunction, bool exit_on_error) {
-        LPVOID lpMsgBuf;
-        LPTSTR lpOutBuf;
+
+    static std::string narrow(LPCSTR buf, MAYBE_UNUSED std::size_t out_size) {
+        return { buf };
+    }
+
+    static std::string narrow(LPWSTR buf, std::size_t out_size) {
+        std::string new_str(out_size + 1, '\0');
+        std::size_t num_converted;
+        wcstombs_s(&num_converted, new_str.data(), new_str.size(), buf, _TRUNCATE);
+        return new_str;
+    }
+
+    void handle_last_error(const char* filename, int line, LPCTSTR function, bool exit_on_error) {
+        LPVOID msg_buf;
+        LPTSTR out_buf;
         DWORD err_code = GetLastError();
 
-        FormatMessageA(
+        FormatMessage(
                 FORMAT_MESSAGE_ALLOCATE_BUFFER |
                 FORMAT_MESSAGE_FROM_SYSTEM |
                 FORMAT_MESSAGE_IGNORE_INSERTS,
                 NULL, err_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // NOLINT
-                (LPTSTR) &lpMsgBuf, 0, NULL);  // NOLINT
+                (LPTSTR) &msg_buf, 0, NULL);  // NOLINT
 
-        lpOutBuf = (LPTSTR)LocalAlloc(LMEM_ZEROINIT,
-                                      (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
-        std::size_t out_size = LocalSize(lpOutBuf) / sizeof(TCHAR);
-        StringCchPrintf((LPTSTR)lpOutBuf,out_size,
-                        TEXT("OS error: \"%s\" failed with error %d; %s"),
-                        lpszFunction, err_code, lpMsgBuf);
+        out_buf = (LPTSTR) LocalAlloc(LMEM_ZEROINIT,
+                (lstrlen((LPCTSTR)msg_buf) + lstrlen(function) + 40) * sizeof(TCHAR));
 
-        std::string throw_buf { lpOutBuf };
-        LocalFree(lpMsgBuf);
-        LocalFree(lpOutBuf);
+        std::size_t out_size = LocalSize(out_buf) / sizeof(TCHAR);
+        StringCchPrintf((LPTSTR)out_buf, out_size,
+                TEXT("OS error: \"%s\" failed with error %d; %s"),
+                        function, err_code, msg_buf);
+
+        std::string throw_buf = narrow(out_buf, lstrlen(out_buf));
+        LocalFree(msg_buf);
+        LocalFree(out_buf);
+
+        if(on_error) on_error();
         DEBUG_ONLY( std::cout << filename << ":" << line << '\n'; )
         std::cout << throw_buf << std::endl;
         if(exit_on_error) waiting_exit(-2);

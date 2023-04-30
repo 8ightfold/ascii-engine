@@ -132,6 +132,12 @@
 #  define COMPILER_UUID(...)
 #endif
 
+#ifdef COMPILER_GNU
+#  define ATTRIBUTE_PRINTF(fmt, va) __attribute__((format(printf, fmt, va)))
+#else
+#  define ATTRIBUTE_PRINTF(...)
+#endif
+
 #if defined(COMPILER_GNU) || defined(COMPILER_LLVM)
 #  define COMPILER_FUNCTION __PRETTY_FUNCTION__
 #elif defined(COMPILER_MSVC)

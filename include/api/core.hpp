@@ -3,6 +3,8 @@
 
 #include <cstdio>
 #include <climits>
+#include <filesystem>
+#include <functional>
 #include <type_traits>
 #include <utility>
 
@@ -12,9 +14,10 @@
 #include <unordered_set>
 
 #include <api/winapi.hpp>
-#include <api/detail/vec.hpp>
-#include <api/detail/object_binding.hpp>
 #include <api/detail/circular_queue.hpp>
+#include <api/detail/object_binding.hpp>
+#include <api/detail/tuple.hpp>
+#include <api/detail/vec.hpp>
 
 #if !CPPVER(20)
 #  error Must compile with C++20 (this project uses features such as __VA_OPT__ and std::span)!
@@ -30,6 +33,10 @@ do { api::assertion_impl(DEBUG_INFO, bool(cond), PP_ALTERNATE("Assertion '" #con
 #define WIN_PRESSED(sc) [](int scancode) -> bool { \
 return ((scancode) & 0x0001) || ((scancode) & 0x8000); }(GetAsyncKeyState(sc))
 
+namespace fs = std::filesystem;
+using ModeASCII = char;
+using ModeRGBA = void;
+
 namespace api {
     struct Coords {
         NODISCARD operator POINT() CNOEXCEPT;
@@ -38,8 +45,11 @@ namespace api {
         NODISCARD operator dVec2() CNOEXCEPT;
         Coords& operator=(POINT p) NOEXCEPT;
         Coords& operator=(COORD p) NOEXCEPT;
+        Coords& operator=(iVec2 p) NOEXCEPT;
+        Coords& operator=(dVec2 p) NOEXCEPT;
         NODISCARD int area() CNOEXCEPT;
         NODISCARD Coords operator+(int i) CNOEXCEPT;
+        NODISCARD Coords operator-(int i) CNOEXCEPT;
         NODISCARD Coords operator+(Coords c) CNOEXCEPT;
         NODISCARD Coords operator-(Coords c) CNOEXCEPT;
         NODISCARD Coords operator*(Coords c) CNOEXCEPT;
@@ -67,17 +77,23 @@ namespace api {
     template <typename K, typename...EE>
     using OrderedSet = std::set<K, EE...>;
 
-
     template <typename T>
     inline constexpr std::size_t bitsof = sizeof(T) * CHAR_BIT;
 
-    enum toggle : bool {
-        off, on
-    };
+    enum toggle : bool { off, on };
 
+    inline Coords device_resolution() noexcept {
+        HDC dc_handle = GetDC(nullptr);
+        return {
+                .x = GetDeviceCaps(dc_handle, HORZRES),
+                .y = GetDeviceCaps(dc_handle, VERTRES),
+        };
+    }
+
+    inline std::function<void()> on_error;
     void assertion_impl(const char* filename, const char* func, int line, bool condition, const std::string& err);
     NORETURN void fatal_error(const char* filename, const char* func, int line, const std::string& err);
-    void handle_last_error(const char* filename, int line, LPTSTR lpszFunction, bool exit_on_error = true);
+    void handle_last_error(const char* filename, int line, LPCTSTR function, bool exit_on_error = true);
     NORETURN void waiting_exit(int code);
     NORETURN FORCE_INLINE void unreachable() { UNREACHABLE(); }
 }

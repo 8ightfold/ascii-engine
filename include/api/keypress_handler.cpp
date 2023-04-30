@@ -26,7 +26,7 @@ namespace api {
         return false;
     }
 
-    void KeypressHandler::rebind(KeyboardInput& keyboard) NOEXCEPT {
+    void KeypressHandler::rebind(Input& keyboard) NOEXCEPT {
         _keyboard = keyboard;
         _pressed = false;
     }

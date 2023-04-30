@@ -10,14 +10,6 @@
 #include <api/core.hpp>
 
 namespace api {
-    inline Coords device_resolution() noexcept {
-        HDC dc_handle = GetDC(nullptr);
-        return {
-            .x = GetDeviceCaps(dc_handle, HORZRES),
-            .y = GetDeviceCaps(dc_handle, VERTRES),
-        };
-    }
-
     struct ConsoleOptions {
         toggle fullscreen = off;
         toggle visible_cursor = off;

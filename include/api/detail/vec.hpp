@@ -15,16 +15,44 @@ namespace api {
     struct Vec<T, 2> {
         T x, y;
 
-        NODISCARD Vec<T, 2> operator+(const Vec<T, 2>& d) NOEXCEPT {
-            return { x + d.x, y + d.y };
+        template <typename U = T>
+        NODISCARD Vec<T, 2> operator+(const Vec<U, 2>& d) NOEXCEPT {
+            return { T(x + d.x), T(y + d.y) };
         }
 
-        NODISCARD Vec<T, 2> operator+(T t) NOEXCEPT {
-            return { x + t, y + t };
+        template <typename U = T>
+        NODISCARD Vec<T, 2> operator+(U t) NOEXCEPT {
+            return { T(x + t), T(y + t) };
         }
 
-        NODISCARD Vec<T, 2> operator/(const Vec<T, 2>& d) NOEXCEPT {
-            return { x / d.x, y / d.y };
+        template <typename U = T>
+        NODISCARD Vec<T, 2> operator-(const Vec<U, 2>& d) NOEXCEPT {
+            return { T(x - d.x), T(y - d.y) };
+        }
+
+        template <typename U = T>
+        NODISCARD Vec<T, 2> operator-(U t) NOEXCEPT {
+            return { T(x - t), T(y - t) };
+        }
+
+        template <typename U = T>
+        NODISCARD Vec<T, 2> operator*(const Vec<U, 2>& d) NOEXCEPT {
+            return { T(x * d.x), T(y * d.y) };
+        }
+
+        template <typename U = T>
+        NODISCARD Vec<T, 2> operator*(U t) NOEXCEPT {
+            return { T(x * t), T(y * t) };
+        }
+
+        template <typename U = T>
+        NODISCARD Vec<T, 2> operator/(const Vec<U, 2>& d) NOEXCEPT {
+            return { T(x / d.x), T(y / d.y) };
+        }
+
+        template <typename U = T>
+        NODISCARD Vec<T, 2> operator/(U t) NOEXCEPT {
+            return { T(x / t), T(y / t) };
         }
     };
 

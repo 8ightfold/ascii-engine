@@ -70,6 +70,12 @@ namespace audio {
         }
     }
 
+    void XAudioInterface::stop_all() NOEXCEPT {
+        for(auto& name_source : _pipeline_sources) {
+            name_source.second.pause();
+        }
+    }
+
     void XAudioInterface::set_volume(const std::string& name, float volume) NOEXCEPT {
         if(_pipeline_sources.contains(name)) {
             auto& source = _pipeline_sources[name];

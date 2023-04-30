@@ -1,7 +1,8 @@
 #ifndef PROJECT3_TEST_FRAMEBUFFER_HPP
 #define PROJECT3_TEST_FRAMEBUFFER_HPP
 
-#include <functional>
+#include <algorithm>
+#include <cstdarg>
 #include <memory>
 #include <span>
 #include <vector>
@@ -12,7 +13,7 @@
 #define API_WRAP(value, max) do { value = (value >= max) ? 0 : (value); } while(0)
 
 namespace api {
-    template <typename T>
+    template <typename T = ModeASCII>
     struct Buffer {
         using _buffer_t = std::vector<T>;
 
@@ -20,8 +21,17 @@ namespace api {
         Buffer(Coords res) : _console_res(res) { _init_buffer(); }
         Buffer(Coords res, T v) : _console_res(res) { _init_buffer(v); }
 
+        void clear() NOEXCEPT {
+            set_buffer_data(255);
+        }
+
         void set_buffer_data(const T& v) NOEXCEPT {
             std::fill(_buffer.begin(), _buffer.end(), v);
+        }
+
+        void set_buffer_texture(const _buffer_t& tex) {
+            debug_assert(tex.size() == _buffer.size());
+            std::copy(tex.cbegin(), tex.cend(), _buffer.begin());
         }
 
         void set_value(Coords pos, const T& v) NOEXCEPT {
@@ -71,6 +81,11 @@ namespace api {
             _realloc_buffer();
         }
 
+        T* get_line(int line) NOEXCEPT {
+            debug_assert(line < _console_res.y);
+            return _buffer.data() + (line * _console_res.x);
+        }
+
     private:
         void _init_buffer() NOEXCEPT {
             _buffer =_buffer_t(_console_res.area(), T{});
@@ -84,6 +99,10 @@ namespace api {
             _buffer.resize(_console_res.area());
         }
 
+        _buffer_t _capture_buffer() CNOEXCEPT {
+            return _buffer;
+        }
+
     private:
         _buffer_t _buffer;
         Coords _console_res;
@@ -93,11 +112,11 @@ namespace api {
     };
 
 
-    template <typename T>
+    template <typename T = ModeASCII>
     using WrappedBuffer = ObjectBinding<Buffer<T>>;
 
 
-    template <typename T>
+    template <typename T = ModeASCII>
     struct Framebuffer {
         enum class State {
             eInvalid,
@@ -107,6 +126,7 @@ namespace api {
 
         using _ibuffer_t = Buffer<T>;
         using _wibuffer_t = WrappedBuffer<T>;
+        using _ibuffer_underlying_t = typename _ibuffer_t::_buffer_t;
 
         Framebuffer(int count = 0) : _console_res({ 0,0 }), _buffer_count(count) {}
         Framebuffer(Coords coords, int count = 0) : _console_res(coords), _buffer_count(count) {}
@@ -172,13 +192,14 @@ namespace api {
             BEG_FRAME("buffer writing")
             auto buffer_data = _buffers[_selected_buffer].get_buffer_data();
             DWORD written_characters;
-            WriteConsoleOutputCharacter(_cout_handle, buffer_data.data(), buffer_data.size(), { 0,0 }, &written_characters);
+            WriteConsoleOutputCharacterA(_cout_handle, buffer_data.data(), buffer_data.size(), { 0,0 }, &written_characters);
             END_FRAME("buffer writing")
 
             if(_buffer_state == State::eDoResize) UNLIKELY {
                 return _update_buffers();
             }
 
+            _written_lines = 0;
             return _buffer_state;
         }
 
@@ -193,6 +214,28 @@ namespace api {
             _buffers[_drawing_buffer] = _buffers[_selected_buffer];
         }
 
+        int write_line(const std::string& format, auto...vv) NOEXCEPT {
+            if constexpr(std::is_same_v<T, char>) {
+                if(_written_lines >= get_active_buffer()->get_y()) _written_lines = 0;
+
+                char* string = get_active_buffer()->get_line(_written_lines);
+                const char* raw_format = format.c_str();
+
+                ++_written_lines;
+                return _bufprintf(string, raw_format, vv...);
+            }
+
+            return 0;
+        }
+
+        /**
+         * Returns the data from the last posted buffer.
+         * Good for extracting static frames.
+         */
+        _ibuffer_underlying_t buffer_snapshot() CNOEXCEPT {
+            return _buffers[_drawing_buffer]._capture_buffer();
+        }
+
         NODISCARD Coords get_coords() CNOEXCEPT {
             return _console_res;
         }
@@ -201,7 +244,22 @@ namespace api {
             return _buffer_count;
         }
 
+        NODISCARD dVec2 get_screen_coords(api::Coords screen_coords) CNOEXCEPT {
+            return api::dVec2(get_coords()) / api::dVec2(screen_coords + 1);
+        }
+
     private:
+        static int _bufprintf(char* string, const char* format, ...) NOEXCEPT {
+            va_list ls;
+            int ret;
+
+            va_start(ls, format);
+            ret = vsprintf(string, format, ls);
+            va_end(ls);
+
+            return ret;
+        }
+
         State _update_buffers() NOEXCEPT {
             for(_ibuffer_t& buf : _buffers) {
                 buf.resize_buffer(_console_res);
@@ -211,6 +269,7 @@ namespace api {
             return State::eDoResize;
         }
 
+    private:
         std::vector<_ibuffer_t> _buffers;
         Coords _console_res;
         int _buffer_count = 0;
@@ -221,13 +280,16 @@ namespace api {
 
         bool _running = false;
         State _buffer_state = State::eNormal;
+        std::size_t _written_lines = 0;
     };
 
-    template <typename T>
+    template <typename T = ModeASCII>
     using FramebufferBinding = ObjectBinding<Framebuffer<T>>;
 
-    template <typename T>
+    template <typename T = ModeASCII>
     using BufferType = typename Buffer<T>::_buffer_t;
+
+    using DefaultFramebuffer = Framebuffer<>;
 }
 
 #endif //PROJECT3_TEST_FRAMEBUFFER_HPP

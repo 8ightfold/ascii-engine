@@ -15,8 +15,14 @@ namespace TPE {
 
     bool ObjectModel::load_model(const fs::path& filepath, WindingOrder wo) {
         if(_locked) return false;
+        if(not filepath.empty()) {
+            _name.clear();
+            _vertices.clear();
+            _faces.clear();
+        }
 
-        auto abs_path = api::ResourceLocator::get_file(filepath);
+        _filepath = filepath;
+        auto abs_path = api::ResourceLocator::get_file(_filepath);
         std::ifstream is { abs_path };
         debug_assert(is.is_open());
         if(not is.is_open()) return false;
@@ -267,6 +273,18 @@ namespace TPE {
         --_active_bodies;
         --_game_world.bodyCount;
         return _active_bodies;
+    }
+
+    TPE_Vec3 get_triangle_normal(const S3L_Index* v, S3L_Model3D* drawn_model) {
+        #define VEC3C_FROM_IDX(v, c) drawn_model->vertices[(*v) * 3 + (c)]
+        #define VEC3_FROM_IDX(v) TPE_vec3( VEC3C_FROM_IDX(v, 0), VEC3C_FROM_IDX(v, 1), VEC3C_FROM_IDX(v, 2) )
+        TPE_Vec3 a = VEC3_FROM_IDX(v); ++v;
+        TPE_Vec3 b = VEC3_FROM_IDX(v); ++v;
+        TPE_Vec3 c = VEC3_FROM_IDX(v);
+        #undef VEC3_FROM_IDX
+        #undef VEC3C_FROM_IDX
+
+        return TPE_vec3Normalized(TPE_vec3Cross(TPE_vec3Minus(c,a), TPE_vec3Minus(c,b)));
     }
 }
 

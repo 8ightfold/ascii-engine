@@ -246,30 +246,12 @@ const S3L_Index cylinderTriangleIndices[CYLINDER_TRIANGLE_COUNT * 3] = {
 S3L_Model3D sphereModel;
 S3L_Model3D cylinderModel;
 
-#define MAX_BODIES 128
-#define MAX_JOINTS 1024
-#define MAX_CONNECTIONS 2048
-
-TPE_Body tpe_bodies[MAX_BODIES];
-TPE_Joint tpe_joints[MAX_JOINTS];
-TPE_Connection tpe_connections[MAX_CONNECTIONS];
-
-int
-helper_debugDrawOn = 0,
-helper_debugDrawOnCountdown = 0;
-
-unsigned int
-helper_jointsUsed = 0,
-helper_connectionsUsed = 0;
-
 TPE::ECS* tpe_ecs = nullptr;
-
 int helper_running;
 
 std::size_t helper_frame, helper_framev;
 
 S3L_Scene s3l_scene;
-
 S3L_Vec4 helper_cameraForw, helper_cameraRight, helper_cameraUp;
 
 void helper_drawLine2D(int x1, int y1, int x2, int y2, uint8_t c, uint8_t l = 255)
@@ -316,31 +298,16 @@ uint8_t s3l_lum = 255;
 
 unsigned int s3l_previousTriangleID = 10000;
 
-S3L_Model3D *_helper_drawnModel;
+S3L_Model3D* _helper_drawnModel;
 
 TPE_Vec3 helper_lightDir;
 
-static TPE_Vec3 get_triangle_normal(const S3L_Index* v) {
-#define VEC3C_FROM_IDX(v, c) _helper_drawnModel->vertices[(*v) * 3 + (c)]
-#define VEC3_FROM_IDX(v) TPE_vec3( VEC3C_FROM_IDX(v, 0), VEC3C_FROM_IDX(v, 1), VEC3C_FROM_IDX(v, 2) )
-    TPE_Vec3 a = VEC3_FROM_IDX(v); ++v;
-    TPE_Vec3 b = VEC3_FROM_IDX(v); ++v;
-    TPE_Vec3 c = VEC3_FROM_IDX(v);
-#undef VEC3_FROM_IDX
-#undef VEC3C_FROM_IDX
-
-    return TPE_vec3Normalized(TPE_vec3Cross(TPE_vec3Minus(c,a), TPE_vec3Minus(c,b)));
-}
-
 // TODO: FINISH
-inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *p)
-{
-    if (p->triangleIndex != s3l_previousTriangleID)
-    {
+inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *p) {
+    if (p->triangleIndex != s3l_previousTriangleID) {
         const S3L_Index *v = _helper_drawnModel->triangles + 3 * p->triangleIndex;
-        TPE_Vec3 normal = get_triangle_normal(v);
+        TPE_Vec3 normal = TPE::get_triangle_normal(v, _helper_drawnModel);
 
-        //TPE_Unit intensity = 190 + TPE_vec3Dot(normal, helper_lightDir) / 8;
         TPE_Unit intensity = 128 + (TPE_vec3Dot(normal, helper_lightDir) / 4);
         s3l_lum = intensity;
 
@@ -350,8 +317,7 @@ inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *p)
     render::draw_pixel(p->x, p->y / 2, s3l_palette, s3l_lum);
 }
 
-void helper_set3DColor(uint8_t p, uint8_t a)
-{
+void helper_set3DColor(uint8_t p, uint8_t a) {
     s3l_palette = p;
     s3l_alpha = a;
 }
@@ -360,9 +326,7 @@ void helper_drawScene() {
 
 }
 
-void helper_drawModel(S3L_Model3D *model, TPE_Vec3 pos, TPE_Vec3 scale,
-                      TPE_Vec3 rot)
-{
+void helper_drawModel(S3L_Model3D *model, TPE_Vec3 pos, TPE_Vec3 scale, TPE_Vec3 rot) {
     _helper_drawnModel = model;
 
     s3l_previousTriangleID = -1;
@@ -550,11 +514,6 @@ void helper_frameEnd()
     render::internal_buffer<char>->swap_buffers();
     ++helper_frame;
     ++helper_framev;
-}
-
-void helper_end()
-{
-    // TODO
 }
 
 #endif //PROJECT3_TEST_HELPER_HPP

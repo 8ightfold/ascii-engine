@@ -13,8 +13,9 @@
 #include <type_traits>
 #include <utility>
 
-#define NOMINMAX 1
-#define OEMRESOURCE
+#define NOMINMAX 1      /// Stops min and max from being defined
+#define OEMRESOURCE     /// Allows us to load data created by winres
+#define UNICODE         /// Gets correct windows filesystem functions
 #include <Windows.h>
 
 #if defined(TRACY_ENABLE) && COMPILER_DEBUG
@@ -39,9 +40,9 @@
             "invalid arguments for " #fn ".");                                                              \
         auto tmp = fn(std::forward<internal_TT>(internal_tt)...);                                           \
         if(tmp == err) [[unlikely]] {                                                                       \
-            std::string str { #fn };                                                                        \
+            const auto* str = TEXT(#fn);                                                                    \
             api::handle_last_error(__FILE__, __LINE__,                                                      \
-                reinterpret_cast<LPTSTR>(str.data()) __VA_OPT__(,) __VA_ARGS__);                            \
+                str __VA_OPT__(,) __VA_ARGS__);                                                             \
         }                                                                                                   \
         return tmp;                                                                                         \
     } (fn);                                                                                                 \
@@ -53,6 +54,12 @@ template <typename T>
 T typed_alloc(std::size_t sz) noexcept {
     auto* ptr = (T)malloc(sz);
     return std::launder(ptr);
+}
+
+inline void enable_ansi() noexcept {
+    DWORD current_mode;
+    GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &current_mode);
+    SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), current_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 }
 
 #endif //PROJECT3_TEST_WINAPI_HPP

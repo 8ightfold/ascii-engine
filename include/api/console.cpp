@@ -1,11 +1,7 @@
 #include "console.hpp"
 
-#define WAIT_FOREVER() do { while(volatile bool b = true) {} } while(0)
-
 namespace api {
     Console::Console(const ConsoleOptions& opt):
-    //_console_handle(_get_console_window()),
-    //_cin_handle(GetStdHandle(STD_INPUT_HANDLE)), _cout_handle(GetStdHandle(STD_OUTPUT_HANDLE)),
     _console_size(_get_console_size(opt)), _font_res(opt.font_size),
     _console_res({ _console_size.x / _font_res.x, _console_size.y / _font_res.y }),
     _console_title(opt.console_title), _font_name(opt.font) {
@@ -23,7 +19,7 @@ namespace api {
 
     void Console::set_all(const ConsoleOptions& opt) noexcept {
         _console_buffer_handle = _allocate_buffer();
-        SetConsoleTitle(_console_title.c_str());
+        SetConsoleTitleA(_console_title.c_str());
 
         disable_selection();
         set_fullscreen_state(opt.fullscreen);

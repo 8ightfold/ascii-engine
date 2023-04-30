@@ -22,7 +22,7 @@ target_compile_definitions(project3 PUBLIC -DCOMPILER_DEBUG=1)
 set(TRACY_ENABLE ON)
 set(TRACY_CALLSTACK ON)
 set(TRACY_STATIC ON)
-add_subdirectory(tracy)
+add_subdirectory(submodules/tracy)
 
 add_executable(project3_test driver.cpp include/resources.o)
 target_link_libraries(project3_test PUBLIC project3 xaudio2_8)

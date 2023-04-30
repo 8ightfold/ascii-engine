@@ -37,10 +37,6 @@
 template <typename T>
 using ECSentry_t = std::array<T, ECS_MAX_SIZE>;
 
-namespace fs = std::filesystem;
-using modeASCII = char;
-using modeRGBA = void;
-
 void helper_set3DColor(uint8_t p, uint8_t a = 255);
 void helper_drawModel(S3L_Model3D *model, TPE_Vec3 pos, TPE_Vec3 scale, TPE_Vec3 rot);
 
@@ -84,6 +80,7 @@ namespace TPE {
         NODISCARD bool _check_validity() CNOEXCEPT;
 
     private:
+        fs::path _filepath;
         std::string _name;
         std::vector<S3L_Unit> _vertices;
         std::vector<S3L_Index> _faces;
@@ -220,10 +217,12 @@ namespace TPE {
         TPE_World _game_world = {};
         std::size_t current_frame = 0;
         TPE_ClosestPointFunction _environment_function = nullptr;
-        TPE_Unit _gravity = 5;
+        TPE_Unit _gravity = 4;
 
         friend struct ECSentry;
     };
+
+    TPE_Vec3 get_triangle_normal(const S3L_Index* v, S3L_Model3D* drawn_model);
 }
 
 

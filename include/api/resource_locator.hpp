@@ -11,6 +11,8 @@ namespace api {
         static void initialize() NOEXCEPT;
         static fs::path get_directory(const std::string& dirname) NOEXCEPT;
         static fs::path get_file(const fs::path& filepath) NOEXCEPT;
+        static void set_hidden(const fs::path& filepath, bool hidden) NOEXCEPT;
+        static fs::path get_core_dir() NOEXCEPT;
         static fs::path get_resource_dir() NOEXCEPT;
 
     private:

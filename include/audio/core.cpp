@@ -2,7 +2,7 @@
 
 namespace audio {
     GlobalResource::GlobalResource(const std::string& name, const std::string& extension) {
-        _resource = $invoke_winapi(FindResource, NULL)(nullptr, name.c_str(), extension.c_str());
+        _resource = $invoke_winapi(FindResourceA, NULL)(nullptr, name.c_str(), extension.c_str());
         _resource_handle = $invoke_winapi(LoadResource, NULL)(nullptr, _resource);
         _resource_data = LockResource(_resource_handle);
         _resource_size = SizeofResource(nullptr, _resource);
