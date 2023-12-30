@@ -1,3 +1,5 @@
+You can find progress videos [here](https://www.youtube.com/playlist?list=PL2MgvFjiDRU94Foe_T3lzJhXe58NM6bgx).
+
 If you are attempting to build this program, make sure you run the exe as admin (VERY IMPORTANT!!!).
 Since Windows updated their console api, some functions may not work otherwise (it will also be quite slow).
 
